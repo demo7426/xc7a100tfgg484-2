@@ -24,8 +24,15 @@ int main()
 	try
 	{
 		hzcc::CXDMA_Test_Base* pcXDma_Test = new hzcc::CXilinx_XDma_Test;
+		DEBUG(DEBUG_LEVEL_INFO, "");
+
 		pcXDma_Test->StartC2HTest();
+		DEBUG(DEBUG_LEVEL_INFO, "");
+
 		pcXDma_Test->StartH2CTest();
+		DEBUG(DEBUG_LEVEL_INFO, "");
+
+		pcXDma_Test->LoopTest();
 	}
 	catch (const std::exception& e)
 	{

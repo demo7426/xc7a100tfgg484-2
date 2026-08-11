@@ -26,5 +26,8 @@
     <ClInclude Include="hzcc_xdma_test.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Debug.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

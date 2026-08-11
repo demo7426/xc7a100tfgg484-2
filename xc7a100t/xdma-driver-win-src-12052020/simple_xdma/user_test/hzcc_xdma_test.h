@@ -18,6 +18,10 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 
 #include <INITGUID.H>
 
+#include <windows.h>
+#include <vector>
+#include <string>
+
 namespace hzcc
 {
 	class CXDMA_Test_Base
@@ -37,9 +41,25 @@ namespace hzcc
 		/// </summary>
 		/// <returns></returns>
 		virtual int StartC2HTest() = 0;
+		
+		/// <summary>
+		/// 回环测试
+		/// </summary>
+		/// <returns></returns>
+		virtual int LoopTest() = 0;
 
-	private:
+	protected:
+		std::vector<std::basic_string<TCHAR>> m_vecBasePath;		//设备接口
+		std::vector<std::basic_string<TCHAR>> m_vecC2H_Path;		//c2h设备接口
+		std::vector<std::basic_string<TCHAR>> m_vecH2C_Path;		//h2c设备接口
 
+	protected:
+		/// <summary>
+		/// 查找匹配的设备
+		/// </summary>
+		/// <param name=""></param>
+		/// <returns>设备数量</returns>
+		unsigned int FindDevice(GUID tGuid);
 	};
 
 	class CXilinx_XDma_Test: public CXDMA_Test_Base
@@ -60,13 +80,11 @@ namespace hzcc
 		/// <returns></returns>
 		int StartC2HTest();
 
-	private:
 		/// <summary>
-		/// 查找匹配的设备
+		/// 回环测试
 		/// </summary>
-		/// <param name=""></param>
-		/// <returns>设备数量</returns>
-		unsigned int FindDevice(GUID tGuid);
+		/// <returns></returns>
+		int LoopTest();
 	};
 
 }
