@@ -38,8 +38,8 @@ enum DEBUG_TYPE
 #define DEBUG(_DebugType, _Format, ...)																				\
 do{																													\
 	if (DEBUG_LEVEL >= _DebugType) {																				\
-		printf(_Format, ##__VA_ARGS__);                																	\
-		printf("\n");                       																			\
+		printf(_Format, ##__VA_ARGS__);                																\
+		printf("\n");                       																		\
 		switch (_DebugType) {																						\
 			case DEBUG_LEVEL_OFF:																					\
 					break;                      																	\
