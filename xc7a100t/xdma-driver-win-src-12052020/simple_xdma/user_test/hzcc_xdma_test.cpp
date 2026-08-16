@@ -30,12 +30,21 @@ namespace hzcc
     DEFINE_GUID(GUID_DEVINTERFACE_XDMA,
         0x74c7e4a9, 0x6d5d, 0x4a70, 0xbc, 0x0d, 0x20, 0x69, 0x1d, 0xff, 0x9e, 0x9d);
 
-
     CXDMA_Test_Base::~CXDMA_Test_Base()
     {
 
     }
 
+
+    int CXDMA_Test_Base::StartH2C_AsyncTest()
+    {
+        return 0;
+    }
+
+    int CXDMA_Test_Base::StartC2H_AsyncTest()
+    {
+        return 0;
+    }
 
     unsigned int CXDMA_Test_Base::FindDevice(GUID tGuid)
     {
@@ -210,6 +219,68 @@ namespace hzcc
         return 0;
     }
 
+    int CXilinx_XDma_Test::StartC2H_AsyncTest()
+    {
+        HANDLE hFile = NULL;
+
+        PCHAR pchReadBuf = (PCHAR)_aligned_malloc(MAX_BUF_SIZE, ALIGNED_SIZE);
+        if (!pchReadBuf)
+        {
+            DEBUG(DEBUG_LEVEL_ERROR, "_aligned_malloc is failed.");
+            return -2;
+        }
+
+        LPOVERLAPPED ptOverlapped = NULL;
+
+        for (size_t i = 0; i < m_vecC2H_Path.size(); i++)
+        {
+            //测试每一个xdma设备
+            hFile = CreateFile(
+                m_vecC2H_Path[i].c_str(), 
+                GENERIC_READ | GENERIC_WRITE, 
+                0, 
+                NULL, 
+                OPEN_EXISTING, 
+                FILE_FLAG_OVERLAPPED, //开启重叠IO
+                NULL
+            );
+            if (hFile == INVALID_HANDLE_VALUE)
+            {
+                DEBUG(DEBUG_LEVEL_ERROR, "CreateFile is failed, c2h_path = %ws.", m_vecC2H_Path[i].c_str());
+                break;
+            }
+
+            for (DWORD len = 256; len <= MAX_BUF_SIZE; len *= 2)
+            {
+                ptOverlapped = static_cast<LPOVERLAPPED>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof OVERLAPPED));
+                if (!ptOverlapped)
+                {
+                    DEBUG(DEBUG_LEVEL_ERROR, "HeapAlloc failed.");
+                    continue;
+                }
+
+                if (!ReadFileEx(hFile, (LPVOID)pchReadBuf, len, ptOverlapped, CXilinx_XDma_Test::ReadFile_Overlapped_Completion_Routine))
+                {
+                    DEBUG(DEBUG_LEVEL_ERROR, "ReadFileEx is failed, len = %u.", len);
+                    break;
+                }
+
+                SleepEx(INFINITE, TRUE);    //主动进入可告警等待，给操作系统机会运行你的 IO 完成函数
+            }
+
+            CloseHandle(hFile);
+            hFile = NULL;
+        }
+
+        if (pchReadBuf)
+        {
+            _aligned_free(pchReadBuf);
+            pchReadBuf = NULL;
+        }
+
+        return 0;
+    }
+
     int CXilinx_XDma_Test::LoopTest()
     {
         HANDLE hC2H_File = NULL;
@@ -254,7 +325,7 @@ namespace hzcc
                 break;
             }
 
-            for (DWORD len = ALIGNED_SIZE; len < MAX_BUF_SIZE; len *= 2)
+            for (DWORD len = ALIGNED_SIZE; len <= MAX_BUF_SIZE; len *= 2)
             {
                 lpNumberOfBytesWritten = 0;
                 if (!WriteFile(hH2C_File, (LPVOID)pchWriteBuf, len, &lpNumberOfBytesWritten, NULL) && lpNumberOfBytesWritten != len)
@@ -298,7 +369,96 @@ namespace hzcc
         return 0;
     }
 
+    int CXilinx_XDma_Test::StartH2C_AsyncTest()
+    {
+        HANDLE hFile = NULL;
 
+        PCHAR pchWriteBuf = (PCHAR)_aligned_malloc(MAX_BUF_SIZE, ALIGNED_SIZE);
+        if (!pchWriteBuf)
+        {
+            DEBUG(DEBUG_LEVEL_ERROR, "_aligned_malloc is failed.");
+            return -2;
+        }
+
+        LPOVERLAPPED ptOverlapped = NULL;
+
+        RtlFillMemory(pchWriteBuf, MAX_BUF_SIZE, 1);
+
+        for (size_t i = 0; i < m_vecH2C_Path.size(); i++)
+        {
+            //测试每一个xdma设备
+            hFile = CreateFile(
+                m_vecH2C_Path[i].c_str(), 
+                GENERIC_READ | GENERIC_WRITE, 
+                0, 
+                NULL, 
+                OPEN_EXISTING, 
+                FILE_FLAG_OVERLAPPED, //开启重叠IO
+                NULL);
+            if (hFile == INVALID_HANDLE_VALUE)
+            {
+                DEBUG(DEBUG_LEVEL_ERROR, "CreateFile is failed, h2c_path = %ws.", m_vecH2C_Path[i].c_str());
+                break;
+            }
+            
+            for (DWORD len = 256; len <= MAX_BUF_SIZE; len *= 2)
+            {
+                ptOverlapped = static_cast<LPOVERLAPPED>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof OVERLAPPED));
+                if (!ptOverlapped)
+                {
+                    DEBUG(DEBUG_LEVEL_ERROR, "HeapAlloc failed.");
+                    continue;
+                }
+
+                if (!WriteFileEx(hFile, (LPVOID)pchWriteBuf, len, ptOverlapped, CXilinx_XDma_Test::WriteFile_Overlapped_Completion_Routine))
+                {
+                    DEBUG(DEBUG_LEVEL_ERROR, "WriteFileEx is failed, len = %u.", len);
+                    break;
+                }
+
+                SleepEx(INFINITE, TRUE);    //主动进入可告警等待，给操作系统机会运行你的 IO 完成函数
+            }
+
+            CloseHandle(hFile);
+            hFile = NULL;
+        }
+
+        if (pchWriteBuf)
+        {
+            _aligned_free(pchWriteBuf);
+            pchWriteBuf = NULL;
+        }
+
+        return 0;
+    }
+
+    VOID WINAPI CXilinx_XDma_Test::WriteFile_Overlapped_Completion_Routine(
+        _In_    DWORD dwErrorCode,
+        _In_    DWORD dwNumberOfBytesTransfered,
+        _Inout_ LPOVERLAPPED lpOverlapped)
+    {
+        DEBUG(DEBUG_LEVEL_INFO, "WriteFileEx is success, dwNumberOfBytesTransfered = %u.", dwNumberOfBytesTransfered);
+
+        if (lpOverlapped)
+        {
+            HeapFree(GetProcessHeap(), 0, lpOverlapped);
+            lpOverlapped = NULL;
+        }
+    }
+
+    VOID WINAPI CXilinx_XDma_Test::ReadFile_Overlapped_Completion_Routine(
+        _In_    DWORD dwErrorCode,
+        _In_    DWORD dwNumberOfBytesTransfered,
+        _Inout_ LPOVERLAPPED lpOverlapped)
+    {
+        DEBUG(DEBUG_LEVEL_INFO, "ReadFileEx is success, dwNumberOfBytesTransfered = %u.", dwNumberOfBytesTransfered);
+
+        if (lpOverlapped)
+        {
+            HeapFree(GetProcessHeap(), 0, lpOverlapped);
+            lpOverlapped = NULL;
+        }
+    }
     
 
 }

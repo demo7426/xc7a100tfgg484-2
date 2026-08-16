@@ -37,10 +37,22 @@ namespace hzcc
 		virtual int StartH2CTest() = 0;
 
 		/// <summary>
+		/// 开始h2c数据异步测试
+		/// </summary>
+		/// <returns></returns>
+		virtual int StartH2C_AsyncTest();
+
+		/// <summary>
 		/// 开始c2h数据测试
 		/// </summary>
 		/// <returns></returns>
 		virtual int StartC2HTest() = 0;
+
+		/// <summary>
+		/// 开始c2h数据异步测试
+		/// </summary>
+		/// <returns></returns>
+		virtual int StartC2H_AsyncTest();
 		
 		/// <summary>
 		/// 回环测试
@@ -75,16 +87,49 @@ namespace hzcc
 		int StartH2CTest();
 
 		/// <summary>
+		/// 开始h2c数据异步测试
+		/// </summary>
+		/// <returns></returns>
+		int StartH2C_AsyncTest();
+
+		/// <summary>
 		/// 开始c2h数据测试
 		/// </summary>
 		/// <returns></returns>
 		int StartC2HTest();
 
 		/// <summary>
+		/// 开始c2h数据异步测试
+		/// </summary>
+		/// <returns></returns>
+		int StartC2H_AsyncTest();
+
+		/// <summary>
 		/// 回环测试
 		/// </summary>
 		/// <returns></returns>
 		int LoopTest();
+
+
+	private:
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="dwErrorCode"></param>
+		/// <param name="dwNumberOfBytesTransfered"></param>
+		/// <param name="lpOverlapped"></param>
+		/// <returns></returns>
+		static VOID WINAPI WriteFile_Overlapped_Completion_Routine(
+			_In_    DWORD dwErrorCode,
+			_In_    DWORD dwNumberOfBytesTransfered,
+			_Inout_ LPOVERLAPPED lpOverlapped
+		);
+
+		static VOID WINAPI ReadFile_Overlapped_Completion_Routine(
+			_In_    DWORD dwErrorCode,
+			_In_    DWORD dwNumberOfBytesTransfered,
+			_Inout_ LPOVERLAPPED lpOverlapped
+		);
 	};
 
 }

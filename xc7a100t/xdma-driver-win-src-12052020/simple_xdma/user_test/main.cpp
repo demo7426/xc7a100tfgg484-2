@@ -15,6 +15,8 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 *************************************************/
 
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 #include "Debug.h"
 #include "hzcc_xdma_test.h"
@@ -29,17 +31,22 @@ int main()
 		pcXDma_Test->StartC2HTest();
 		DEBUG(DEBUG_LEVEL_INFO, "");
 
+		pcXDma_Test->StartC2H_AsyncTest();
+		DEBUG(DEBUG_LEVEL_INFO, "");
+
 		pcXDma_Test->StartH2CTest();
 		DEBUG(DEBUG_LEVEL_INFO, "");
 
+		pcXDma_Test->StartH2C_AsyncTest();
+		DEBUG(DEBUG_LEVEL_INFO, "");
+
 		pcXDma_Test->LoopTest();
+		DEBUG(DEBUG_LEVEL_INFO, "");
 	}
 	catch (const std::exception& e)
 	{
 		DEBUG(DEBUG_LEVEL_ERROR, e.what());
 	}
-
-
 
     return EXIT_SUCCESS;
 }

@@ -1,0 +1,62 @@
+;
+; simple_xdma.inf
+;
+
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = System ; TODO: specify appropriate Class
+ClassGuid   = {4d36e97d-e325-11ce-bfc1-08002be10318} ; TODO: specify appropriate ClassGuid
+Provider    = %ManufacturerName%
+CatalogFile = simple_xdma.cat
+DriverVer   = ; TODO: set DriverVer in stampinf property pages
+PnpLockdown = 1
+
+[DestinationDirs]
+DefaultDestDir = 13
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+simple_xdma.sys = 1,,
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName% = Standard,NT$ARCH$.10.0...16299 ; %13% support introduced in build 16299
+
+[Standard.NT$ARCH$.10.0...16299]
+%simple_xdma.DeviceDesc% = simple_xdma_Device, Root\simple_xdma ; TODO: edit hw-id
+
+[simple_xdma_Device.NT]
+CopyFiles = File_Copy
+
+[File_Copy]
+simple_xdma.sys
+
+;-------------- Service installation
+[simple_xdma_Device.NT.Services]
+AddService = simple_xdma,%SPSVCINST_ASSOCSERVICE%, simple_xdma_Service_Inst
+
+; -------------- simple_xdma driver install sections
+[simple_xdma_Service_Inst]
+DisplayName    = %simple_xdma.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %13%\simple_xdma.sys
+
+[simple_xdma_Device.NT.Wdf]
+KmdfService = simple_xdma, simple_xdma_wdfsect
+
+[simple_xdma_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE = 0x00000002
+ManufacturerName = "<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+DiskName = "simple_xdma Installation Disk"
+simple_xdma.DeviceDesc = "simple_xdma Device"
+simple_xdma.SVCDESC = "simple_xdma Service"
