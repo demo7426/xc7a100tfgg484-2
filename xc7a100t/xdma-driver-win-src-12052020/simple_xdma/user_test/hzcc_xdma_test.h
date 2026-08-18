@@ -21,6 +21,9 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 #include <windows.h>
 #include <vector>
 #include <string>
+#include <thread>
+#include <optional>
+#include <mutex>
 
 namespace hzcc
 {
@@ -60,6 +63,25 @@ namespace hzcc
 		/// <returns></returns>
 		virtual int LoopTest() = 0;
 
+	public:
+		/// <summary>
+		/// 开始h2c速度测试
+		/// </summary>
+		/// <returns></returns>
+		virtual int StartH2C_SpeedTest();
+		
+		/// <summary>
+		/// 获取h2c的速度信息
+		/// </summary>
+		/// <returns></returns>
+		virtual std::optional<std::vector<double>> GetH2C_SpeedInfo();
+
+		/// <summary>
+		/// 停止h2c速度测试
+		/// </summary>
+		/// <returns></returns>
+		virtual int StopH2C_SpeedTest();
+
 	protected:
 		std::vector<std::basic_string<TCHAR>> m_vecBasePath;		//设备接口
 		std::vector<std::basic_string<TCHAR>> m_vecC2H_Path;		//c2h设备接口
@@ -84,32 +106,50 @@ namespace hzcc
 		/// 开始h2c数据测试
 		/// </summary>
 		/// <returns></returns>
-		int StartH2CTest();
+		int StartH2CTest() override;
 
 		/// <summary>
 		/// 开始h2c数据异步测试
 		/// </summary>
 		/// <returns></returns>
-		int StartH2C_AsyncTest();
+		int StartH2C_AsyncTest() override;
 
 		/// <summary>
 		/// 开始c2h数据测试
 		/// </summary>
 		/// <returns></returns>
-		int StartC2HTest();
+		int StartC2HTest() override;
 
 		/// <summary>
 		/// 开始c2h数据异步测试
 		/// </summary>
 		/// <returns></returns>
-		int StartC2H_AsyncTest();
+		int StartC2H_AsyncTest() override;
 
 		/// <summary>
 		/// 回环测试
 		/// </summary>
 		/// <returns></returns>
-		int LoopTest();
+		int LoopTest() override;
 
+	public:
+		/// <summary>
+		/// 开始h2c速度测试
+		/// </summary>
+		/// <returns></returns>
+		int StartH2C_SpeedTest() override;
+
+		/// <summary>
+		/// 获取h2c的速度信息
+		/// </summary>
+		/// <returns>速度信息;单位:MB/s</returns>
+		std::optional<std::vector<double>> GetH2C_SpeedInfo() override;
+
+		/// <summary>
+		/// 停止h2c速度测试
+		/// </summary>
+		/// <returns></returns>
+		int StopH2C_SpeedTest() override;
 
 	private:
 		/// <summary>
@@ -130,6 +170,13 @@ namespace hzcc
 			_In_    DWORD dwNumberOfBytesTransfered,
 			_Inout_ LPOVERLAPPED lpOverlapped
 		);
+
+
+	private:
+		std::vector<std::jthread*> m_vecJThH2C;		//h2c线程对象
+		
+		std::vector<double> m_vecH2CSpeed;
+		std::mutex m_mutH2CSpeed;
 	};
 
 }

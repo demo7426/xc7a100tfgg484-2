@@ -46,6 +46,21 @@ namespace hzcc
         return 0;
     }
 
+    int CXDMA_Test_Base::StartH2C_SpeedTest()
+    {
+        return 0;
+    }
+
+    std::optional<std::vector<double>> CXDMA_Test_Base::GetH2C_SpeedInfo()
+    {
+        return std::nullopt;
+    }
+
+    int CXDMA_Test_Base::StopH2C_SpeedTest()
+    {
+        return 0;
+    }
+
     unsigned int CXDMA_Test_Base::FindDevice(GUID tGuid)
     {
         HDEVINFO hDevInfo = SetupDiGetClassDevs((LPGUID)&tGuid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE); //返回 设备信息集 的句柄，其中包含本地计算机请求的设备信息元素。
@@ -364,6 +379,128 @@ namespace hzcc
         {
             _aligned_free(pchReadBuf);
             pchReadBuf = NULL;
+        }
+
+        return 0;
+    }
+
+    int CXilinx_XDma_Test::StartH2C_SpeedTest()
+    {
+        auto func = [this](std::stop_token _st, std::basic_string<TCHAR> _H2C_Path) {
+            HANDLE hFile = NULL;
+
+            PCHAR pchWriteBuf = (PCHAR)_aligned_malloc(MAX_BUF_SIZE, ALIGNED_SIZE);
+            if (!pchWriteBuf)
+            {
+                DEBUG(DEBUG_LEVEL_ERROR, "_aligned_malloc is failed.");
+                return;
+            }
+
+            DWORD lpNumberOfBytesWritten = 0;
+            UINT64 lWriteSum = 0;       //写入数据的总长度;单位:Byte
+            constexpr static DWORD len = 1 * 1024 * 1024;
+
+            auto start_clock = std::chrono::steady_clock::now();
+            auto end_clock = start_clock;
+
+            //测试每一个xdma设备
+            hFile = CreateFile(_H2C_Path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (hFile == INVALID_HANDLE_VALUE)
+            {
+                DEBUG(DEBUG_LEVEL_ERROR, "CreateFile is failed, h2c_path = %ws.", _H2C_Path.c_str());
+                return;
+            }
+            
+            RtlFillMemory(pchWriteBuf, MAX_BUF_SIZE, 1);
+
+            start_clock = std::chrono::steady_clock::now();
+
+            while (!_st.stop_requested())
+            {
+                lpNumberOfBytesWritten = 0;
+
+                if (!WriteFile(hFile, (LPVOID)pchWriteBuf, len, &lpNumberOfBytesWritten, NULL) && lpNumberOfBytesWritten != len)
+                {
+                    DEBUG(DEBUG_LEVEL_INFO, "WriteFile is failed, len = %u, lpNumberOfBytesWritten = %u.", len, lpNumberOfBytesWritten);
+                    break;
+                }
+
+                lWriteSum += lpNumberOfBytesWritten;
+
+                end_clock = std::chrono::steady_clock::now();
+
+                auto ns = (end_clock - start_clock).count();
+
+                if (ns >= 1000'000'000)
+                {
+                    {
+                        std::unique_lock<std::mutex> lock(m_mutH2CSpeed);
+
+                        m_vecH2CSpeed.push_back(lWriteSum * 1.0 / 1000 / 1000 / (ns * 1.0 / 1000'000'000));
+                    }
+
+                    lWriteSum = 0;
+
+                    start_clock = std::chrono::steady_clock::now();
+                    end_clock = start_clock;
+                }
+
+            }
+
+            CloseHandle(hFile);
+            hFile = NULL;
+
+            if (pchWriteBuf)
+            {
+                _aligned_free(pchWriteBuf);
+                pchWriteBuf = NULL;
+            }
+
+            return;
+            };
+
+        m_vecH2CSpeed.reserve(64);
+
+        m_vecJThH2C.reserve(m_vecH2C_Path.size());
+
+        for (size_t i = 0; i < m_vecH2C_Path.size(); i++)       ///测试所有PCI/PCIe设备
+        {
+            m_vecJThH2C.push_back(new std::jthread(func, m_vecH2C_Path[i]));
+        }
+
+        return 0;
+    }
+
+    std::optional<std::vector<double>> CXilinx_XDma_Test::GetH2C_SpeedInfo()
+    {
+        std::optional<std::vector<double>> opt_rtn;
+
+        {
+            std::unique_lock<std::mutex> lock(m_mutH2CSpeed);
+
+            if (!m_vecH2CSpeed.empty())
+            {
+                opt_rtn = m_vecH2CSpeed;
+                m_vecH2CSpeed.clear();
+
+                return opt_rtn;
+            }
+        }
+
+        return std::nullopt;
+    }
+
+    int CXilinx_XDma_Test::StopH2C_SpeedTest()
+    {
+        for (size_t i = 0; i < m_vecJThH2C.size(); i++)
+        {
+            if (m_vecJThH2C[i])
+            {
+                m_vecJThH2C[i]->request_stop();
+
+                delete m_vecJThH2C[i];
+                m_vecJThH2C[i] = nullptr;
+            }
         }
 
         return 0;

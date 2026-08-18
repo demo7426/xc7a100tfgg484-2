@@ -21,27 +21,64 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 #include "Debug.h"
 #include "hzcc_xdma_test.h"
 
-int main()
+int main(int argc, char* argv[])
 {
 	try
 	{
+		int nCmd = 4;
+
+		if(argc > 1)
+			nCmd = std::atoi(argv[1]);
+
 		hzcc::CXDMA_Test_Base* pcXDma_Test = new hzcc::CXilinx_XDma_Test;
 		DEBUG(DEBUG_LEVEL_INFO, "");
 
-		pcXDma_Test->StartC2HTest();
-		DEBUG(DEBUG_LEVEL_INFO, "");
+		switch (nCmd)
+		{
+		case 0:
+			pcXDma_Test->StartC2HTest();
+			break;
+		case 1:
+			pcXDma_Test->StartC2H_AsyncTest();
+			break;
+		case 2:
+			pcXDma_Test->StartH2CTest();
+			break;
+		case 3:
+			pcXDma_Test->StartH2C_AsyncTest();
+			break;
+		case 4:
+			pcXDma_Test->LoopTest();
+			break;
+		case 5:
+		{
+			pcXDma_Test->StartH2C_SpeedTest();
 
-		pcXDma_Test->StartC2H_AsyncTest();
-		DEBUG(DEBUG_LEVEL_INFO, "");
+			while (1)
+			{
+				auto opt_rtn = pcXDma_Test->GetH2C_SpeedInfo();
 
-		pcXDma_Test->StartH2CTest();
-		DEBUG(DEBUG_LEVEL_INFO, "");
+				if (opt_rtn.has_value())
+				{
+					auto vecSpeed = opt_rtn.value();
+					for (size_t i = 0; i < vecSpeed.size(); i++)
+					{
+						DEBUG(DEBUG_LEVEL_INFO, "H2C speed = %.04f MB/s.", vecSpeed[i]);
+					}
+				}
 
-		pcXDma_Test->StartH2C_AsyncTest();
-		DEBUG(DEBUG_LEVEL_INFO, "");
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			}
 
-		pcXDma_Test->LoopTest();
-		DEBUG(DEBUG_LEVEL_INFO, "");
+			pcXDma_Test->StopH2C_SpeedTest();
+		}
+			break;
+		default:
+			break;
+		}
+
+		
+
 	}
 	catch (const std::exception& e)
 	{
