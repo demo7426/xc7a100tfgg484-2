@@ -21,38 +21,50 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 #include "Debug.h"
 #include "hzcc_xdma_test.h"
 
+enum class _USER_CMD_TYPE: int32_t
+{
+	NONE = -1,				//无效参数
+	C2H_TEST = 0,			//同步c2h测试
+	C2H_ASYNC_TEST,			//异步c2h测试
+	H2C_TEST,				//同步h2c测试
+	H2C_ASYNC_TEST,			//异步h2c测试
+	LOOP_TEST,				//回环测试
+	H2C_SPEED_TEST,			//h2c速度测试
+	C2H_SPEED_TEST,			//c2h速度测试
+};
+
 int main(int argc, char* argv[])
 {
 	try
 	{
-		int nCmd = 4;
+		_USER_CMD_TYPE eCmd = _USER_CMD_TYPE::H2C_SPEED_TEST;
 
 		if(argc > 1)
-			nCmd = std::atoi(argv[1]);
+			eCmd = static_cast<_USER_CMD_TYPE>(std::atoi(argv[1]));
 
 		hzcc::CXDMA_Test_Base* pcXDma_Test = new hzcc::CXilinx_XDma_Test;
 		DEBUG(DEBUG_LEVEL_INFO, "");
 
-		switch (nCmd)
+		switch (eCmd)
 		{
-		case 0:
+		case _USER_CMD_TYPE::C2H_TEST:
 			pcXDma_Test->StartC2HTest();
 			break;
-		case 1:
+		case _USER_CMD_TYPE::C2H_ASYNC_TEST:
 			pcXDma_Test->StartC2H_AsyncTest();
 			break;
-		case 2:
+		case _USER_CMD_TYPE::H2C_TEST:
 			pcXDma_Test->StartH2CTest();
 			break;
-		case 3:
+		case _USER_CMD_TYPE::H2C_ASYNC_TEST:
 			pcXDma_Test->StartH2C_AsyncTest();
 			break;
-		case 4:
+		case _USER_CMD_TYPE::LOOP_TEST:
 			pcXDma_Test->LoopTest();
 			break;
-		case 5:
+		case _USER_CMD_TYPE::H2C_SPEED_TEST:		
 		{
-			pcXDma_Test->StartH2C_SpeedTest();
+			pcXDma_Test->StartH2C_SpeedTest(0);
 
 			while (1)
 			{
@@ -72,12 +84,33 @@ int main(int argc, char* argv[])
 
 			pcXDma_Test->StopH2C_SpeedTest();
 		}
-			break;
+		break;
+		case _USER_CMD_TYPE::C2H_SPEED_TEST:		
+		{
+			pcXDma_Test->StartC2H_SpeedTest(0);
+
+			while (1)
+			{
+				auto opt_rtn = pcXDma_Test->GetC2H_SpeedInfo();
+
+				if (opt_rtn.has_value())
+				{
+					auto vecSpeed = opt_rtn.value();
+					for (size_t i = 0; i < vecSpeed.size(); i++)
+					{
+						DEBUG(DEBUG_LEVEL_INFO, "C2H speed = %.04f MB/s.", vecSpeed[i]);
+					}
+				}
+
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			}
+
+			pcXDma_Test->StopC2H_SpeedTest();
+		}
+		break;
 		default:
 			break;
 		}
-
-		
 
 	}
 	catch (const std::exception& e)

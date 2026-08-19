@@ -67,8 +67,9 @@ namespace hzcc
 		/// <summary>
 		/// 开始h2c速度测试
 		/// </summary>
+		/// <param name="_DevIndex">设备索引</param>
 		/// <returns></returns>
-		virtual int StartH2C_SpeedTest();
+		virtual int StartH2C_SpeedTest(int _DevIndex);
 		
 		/// <summary>
 		/// 获取h2c的速度信息
@@ -81,6 +82,26 @@ namespace hzcc
 		/// </summary>
 		/// <returns></returns>
 		virtual int StopH2C_SpeedTest();
+
+	public:
+		/// <summary>
+		/// 开始c2h速度测试
+		/// </summary>
+		/// <param name="_DevIndex">设备索引</param>
+		/// <returns></returns>
+		virtual int StartC2H_SpeedTest(int _DevIndex);
+		
+		/// <summary>
+		/// 获取c2h的速度信息
+		/// </summary>
+		/// <returns></returns>
+		virtual std::optional<std::vector<double>> GetC2H_SpeedInfo();
+
+		/// <summary>
+		/// 停止c2h速度测试
+		/// </summary>
+		/// <returns></returns>
+		virtual int StopC2H_SpeedTest();
 
 	protected:
 		std::vector<std::basic_string<TCHAR>> m_vecBasePath;		//设备接口
@@ -136,8 +157,9 @@ namespace hzcc
 		/// <summary>
 		/// 开始h2c速度测试
 		/// </summary>
+		/// <param name="_DevIndex">设备索引</param>
 		/// <returns></returns>
-		int StartH2C_SpeedTest() override;
+		int StartH2C_SpeedTest(int _DevIndex) override;
 
 		/// <summary>
 		/// 获取h2c的速度信息
@@ -150,6 +172,26 @@ namespace hzcc
 		/// </summary>
 		/// <returns></returns>
 		int StopH2C_SpeedTest() override;
+
+	public:
+		/// <summary>
+		/// 开始c2h速度测试
+		/// </summary>
+		/// <param name="_DevIndex">设备索引</param>
+		/// <returns></returns>
+		int StartC2H_SpeedTest(int _DevIndex);
+
+		/// <summary>
+		/// 获取c2h的速度信息
+		/// </summary>
+		/// <returns></returns>
+		std::optional<std::vector<double>> GetC2H_SpeedInfo();
+
+		/// <summary>
+		/// 停止c2h速度测试
+		/// </summary>
+		/// <returns></returns>
+		int StopC2H_SpeedTest();
 
 	private:
 		/// <summary>
@@ -174,9 +216,13 @@ namespace hzcc
 
 	private:
 		std::vector<std::jthread*> m_vecJThH2C;		//h2c线程对象
+		std::vector<std::jthread*> m_vecJThC2H;		//c2h线程对象
 		
 		std::vector<double> m_vecH2CSpeed;
 		std::mutex m_mutH2CSpeed;
+
+		std::vector<double> m_vecC2HSpeed;
+		std::mutex m_mutC2HSpeed;
 	};
 
 }

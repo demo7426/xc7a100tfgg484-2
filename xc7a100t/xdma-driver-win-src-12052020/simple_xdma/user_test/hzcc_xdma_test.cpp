@@ -46,7 +46,7 @@ namespace hzcc
         return 0;
     }
 
-    int CXDMA_Test_Base::StartH2C_SpeedTest()
+    int CXDMA_Test_Base::StartH2C_SpeedTest(int _DevIndex)
     {
         return 0;
     }
@@ -57,6 +57,21 @@ namespace hzcc
     }
 
     int CXDMA_Test_Base::StopH2C_SpeedTest()
+    {
+        return 0;
+    }
+
+    int CXDMA_Test_Base::StartC2H_SpeedTest(int _DevIndex)
+    {
+        return 0;
+    }
+
+    std::optional<std::vector<double>> CXDMA_Test_Base::GetC2H_SpeedInfo()
+    {
+        return std::optional<std::vector<double>>();
+    }
+
+    int CXDMA_Test_Base::StopC2H_SpeedTest()
     {
         return 0;
     }
@@ -384,7 +399,7 @@ namespace hzcc
         return 0;
     }
 
-    int CXilinx_XDma_Test::StartH2C_SpeedTest()
+    int CXilinx_XDma_Test::StartH2C_SpeedTest(int _DevIndex)
     {
         auto func = [this](std::stop_token _st, std::basic_string<TCHAR> _H2C_Path) {
             HANDLE hFile = NULL;
@@ -398,7 +413,7 @@ namespace hzcc
 
             DWORD lpNumberOfBytesWritten = 0;
             UINT64 lWriteSum = 0;       //写入数据的总长度;单位:Byte
-            constexpr static DWORD len = 1 * 1024 * 1024;
+            constexpr static DWORD len = 8 * 1024 * 1024;
 
             auto start_clock = std::chrono::steady_clock::now();
             auto end_clock = start_clock;
@@ -461,13 +476,15 @@ namespace hzcc
 
         m_vecH2CSpeed.reserve(64);
 
-        m_vecJThH2C.reserve(m_vecH2C_Path.size());
-
-        for (size_t i = 0; i < m_vecH2C_Path.size(); i++)       ///测试所有PCI/PCIe设备
+        if (_DevIndex >= m_vecH2C_Path.size())
         {
-            m_vecJThH2C.push_back(new std::jthread(func, m_vecH2C_Path[i]));
+            DEBUG(DEBUG_LEVEL_ERROR, "_DevIndex over of range, _DevIndex = %d.", _DevIndex);
+            return -2;
         }
 
+        //测试当前的PCI/PCIe设备
+        m_vecJThH2C.push_back(new std::jthread(func, m_vecH2C_Path[_DevIndex]));
+        
         return 0;
     }
 
@@ -502,6 +519,134 @@ namespace hzcc
                 m_vecJThH2C[i] = nullptr;
             }
         }
+
+        if(!m_vecJThH2C.empty())
+            m_vecJThH2C.clear();
+
+        return 0;
+    }
+
+    int CXilinx_XDma_Test::StartC2H_SpeedTest(int _DevIndex)
+    {
+        auto func = [this](std::stop_token _st, std::basic_string<TCHAR> _C2H_Path) {
+            HANDLE hFile = NULL;
+
+            PCHAR pchReadBuf = (PCHAR)_aligned_malloc(MAX_BUF_SIZE, ALIGNED_SIZE);
+            if (!pchReadBuf)
+            {
+                DEBUG(DEBUG_LEVEL_ERROR, "_aligned_malloc is failed.");
+                return;
+            }
+
+            DWORD lpNumberOfBytesRead = 0;
+            UINT64 lWriteSum = 0;       //写入数据的总长度;单位:Byte
+            constexpr static DWORD len = 8 * 1024 * 1024;
+
+            auto start_clock = std::chrono::steady_clock::now();
+            auto end_clock = start_clock;
+
+            //测试每一个xdma设备
+            hFile = CreateFile(_C2H_Path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (hFile == INVALID_HANDLE_VALUE)
+            {
+                DEBUG(DEBUG_LEVEL_ERROR, "CreateFile is failed, c2h_path = %ws.", _C2H_Path.c_str());
+                return;
+            }
+
+            start_clock = std::chrono::steady_clock::now();
+
+            while (!_st.stop_requested())
+            {
+                lpNumberOfBytesRead = 0;
+
+                if (!ReadFile(hFile, (LPVOID)pchReadBuf, len, &lpNumberOfBytesRead, NULL) && lpNumberOfBytesRead != len)
+                {
+                    DEBUG(DEBUG_LEVEL_INFO, "ReadFile is failed, len = %u, lpNumberOfBytesRead = %u.", len, lpNumberOfBytesRead);
+                    break;
+                }
+
+                lWriteSum += lpNumberOfBytesRead;
+
+                end_clock = std::chrono::steady_clock::now();
+
+                auto ns = (end_clock - start_clock).count();
+
+                if (ns >= 1000'000'000)
+                {
+                    {
+                        std::unique_lock<std::mutex> lock(m_mutC2HSpeed);
+
+                        m_vecC2HSpeed.push_back(lWriteSum * 1.0 / 1000 / 1000 / (ns * 1.0 / 1000'000'000));
+                    }
+
+                    lWriteSum = 0;
+
+                    start_clock = std::chrono::steady_clock::now();
+                    end_clock = start_clock;
+                }
+
+            }
+
+            CloseHandle(hFile);
+            hFile = NULL;
+
+            if (pchReadBuf)
+            {
+                _aligned_free(pchReadBuf);
+                pchReadBuf = NULL;
+            }
+
+            return;
+            };
+
+        m_vecC2HSpeed.reserve(64);
+
+        if (_DevIndex >= m_vecC2H_Path.size())
+        {
+            DEBUG(DEBUG_LEVEL_ERROR, "_DevIndex over of range, _DevIndex = %d.", _DevIndex);
+            return -2;
+        }
+
+        //测试当前的PCI/PCIe设备
+        m_vecJThC2H.push_back(new std::jthread(func, m_vecC2H_Path[_DevIndex]));
+
+        return 0;
+    }
+
+    std::optional<std::vector<double>> CXilinx_XDma_Test::GetC2H_SpeedInfo()
+    {
+        std::optional<std::vector<double>> opt_rtn;
+
+        {
+            std::unique_lock<std::mutex> lock(m_mutC2HSpeed);
+
+            if (!m_vecC2HSpeed.empty())
+            {
+                opt_rtn = m_vecC2HSpeed;
+                m_vecC2HSpeed.clear();
+
+                return opt_rtn;
+            }
+        }
+
+        return std::nullopt;
+    }
+
+    int CXilinx_XDma_Test::StopC2H_SpeedTest()
+    {
+        for (size_t i = 0; i < m_vecJThC2H.size(); i++)
+        {
+            if (m_vecJThC2H[i])
+            {
+                m_vecJThC2H[i]->request_stop();
+
+                delete m_vecJThC2H[i];
+                m_vecJThC2H[i] = nullptr;
+            }
+        }
+
+        if (!m_vecJThC2H.empty())
+            m_vecJThC2H.clear();
 
         return 0;
     }
