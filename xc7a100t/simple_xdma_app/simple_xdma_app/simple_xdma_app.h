@@ -1,0 +1,32 @@
+/*************************************************
+Copyright (C), 2009-2012    , Level Chip Co., Ltd.
+文件名:	simple_xdma_app.h
+作  者:	钱锐      版本: V1.0     新建日期: 2026.08.21
+描  述: 主窗口
+备  注:	支持linux和windows操作系统
+修改记录:
+
+  1.  日期: 2026.08.21
+      作者: 钱锐
+      内容:
+          1) 此为模板第一个版本；
+      版本:V1.0
+
+*************************************************/
+
+#pragma once
+
+#include <QtWidgets/QMainWindow>
+#include "ui_simple_xdma_app.h"
+
+class simple_xdma_app : public QMainWindow
+{
+    Q_OBJECT
+
+public:
+    simple_xdma_app(QWidget *parent = nullptr);
+    ~simple_xdma_app();
+
+private:
+    Ui::simple_xdma_appClass ui;
+};
