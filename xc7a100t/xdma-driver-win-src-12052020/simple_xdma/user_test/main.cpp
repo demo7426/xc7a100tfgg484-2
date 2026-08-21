@@ -31,6 +31,7 @@ enum class _USER_CMD_TYPE: int32_t
 	LOOP_TEST,				//回环测试
 	H2C_SPEED_TEST,			//h2c速度测试
 	C2H_SPEED_TEST,			//c2h速度测试
+	FULL_DUPLEX_TEST,		//全双工测试
 };
 
 int main(int argc, char* argv[])
@@ -106,6 +107,42 @@ int main(int argc, char* argv[])
 			}
 
 			pcXDma_Test->StopC2H_SpeedTest();
+		}
+		break;
+		case _USER_CMD_TYPE::FULL_DUPLEX_TEST:
+		{
+			pcXDma_Test->StartH2C_SpeedTest(0);
+			pcXDma_Test->StartC2H_SpeedTest(0);
+
+			while (1)
+			{
+				auto opt_rtn = pcXDma_Test->GetH2C_SpeedInfo();
+
+				if (opt_rtn.has_value())
+				{
+					auto vecSpeed = opt_rtn.value();
+					for (size_t i = 0; i < vecSpeed.size(); i++)
+					{
+						DEBUG(DEBUG_LEVEL_INFO, "H2C speed = %.04f MB/s.", vecSpeed[i]);
+					}
+				}
+
+				opt_rtn = pcXDma_Test->GetC2H_SpeedInfo();
+
+				if (opt_rtn.has_value())
+				{
+					auto vecSpeed = opt_rtn.value();
+					for (size_t i = 0; i < vecSpeed.size(); i++)
+					{
+						DEBUG(DEBUG_LEVEL_INFO, "C2H speed = %.04f MB/s.", vecSpeed[i]);
+					}
+				}
+
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			}
+
+			pcXDma_Test->StopC2H_SpeedTest();
+			pcXDma_Test->StopH2C_SpeedTest();
 		}
 		break;
 		default:

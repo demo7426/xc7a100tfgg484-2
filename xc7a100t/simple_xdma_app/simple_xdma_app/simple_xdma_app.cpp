@@ -1,5 +1,5 @@
 /*************************************************
-Copyright (C), 2009-2012    , Level Chip Co., Ltd.
+Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 文件名:	simple_xdma_app.cpp
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.21
 描  述: 主窗口
@@ -23,6 +23,8 @@ simple_xdma_app::simple_xdma_app(QWidget *parent)
     : QMainWindow(parent)
 {
     ui.setupUi(this);
+
+    this->resize(1280, 800);
 
     setCentralWidget(new CPCIe_Widget(this));
 }
