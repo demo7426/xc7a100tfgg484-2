@@ -26,6 +26,13 @@ simple_xdma_app::simple_xdma_app(QWidget *parent)
 
     this->resize(1280, 800);
 
+    QIcon winIcon(":/image/res/image/x.png");
+    if (!winIcon.isNull())
+    {
+        setWindowIcon(winIcon);
+    }
+
+
     setCentralWidget(new CPCIe_Widget(this));
 }
 

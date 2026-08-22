@@ -43,106 +43,106 @@ int main(int argc, char* argv[])
 		if(argc > 1)
 			eCmd = static_cast<_USER_CMD_TYPE>(std::atoi(argv[1]));
 
-		hzcc::CXDMA_Test_Base* pcXDma_Test = new hzcc::CXilinx_XDma_Test;
+		hzcc::CXDMA_Test_Base* pcXDMA_Test = new hzcc::CXilinx_XDMA_Test;
 		DEBUG(DEBUG_LEVEL_INFO, "");
 
 		switch (eCmd)
 		{
 		case _USER_CMD_TYPE::C2H_TEST:
-			pcXDma_Test->StartC2HTest();
+			pcXDMA_Test->StartC2HTest();
 			break;
 		case _USER_CMD_TYPE::C2H_ASYNC_TEST:
-			pcXDma_Test->StartC2H_AsyncTest();
+			pcXDMA_Test->StartC2H_AsyncTest();
 			break;
 		case _USER_CMD_TYPE::H2C_TEST:
-			pcXDma_Test->StartH2CTest();
+			pcXDMA_Test->StartH2CTest();
 			break;
 		case _USER_CMD_TYPE::H2C_ASYNC_TEST:
-			pcXDma_Test->StartH2C_AsyncTest();
+			pcXDMA_Test->StartH2C_AsyncTest();
 			break;
 		case _USER_CMD_TYPE::LOOP_TEST:
-			pcXDma_Test->LoopTest();
+			pcXDMA_Test->LoopTest();
 			break;
 		case _USER_CMD_TYPE::H2C_SPEED_TEST:		
 		{
-			pcXDma_Test->StartH2C_SpeedTest(0);
+			pcXDMA_Test->StartH2C_SpeedTest(0);
 
 			while (1)
 			{
-				auto opt_rtn = pcXDma_Test->GetH2C_SpeedInfo();
+				auto opt_rtn = pcXDMA_Test->GetH2C_SpeedInfo();
 
 				if (opt_rtn.has_value())
 				{
 					auto vecSpeed = opt_rtn.value();
 					for (size_t i = 0; i < vecSpeed.size(); i++)
 					{
-						DEBUG(DEBUG_LEVEL_INFO, "H2C speed = %.04f MB/s.", vecSpeed[i]);
+						DEBUG(DEBUG_LEVEL_INFO, "H2C speed = %.06f MB/s.", vecSpeed[i]);
 					}
 				}
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			}
 
-			pcXDma_Test->StopH2C_SpeedTest();
+			pcXDMA_Test->StopH2C_SpeedTest();
 		}
 		break;
 		case _USER_CMD_TYPE::C2H_SPEED_TEST:		
 		{
-			pcXDma_Test->StartC2H_SpeedTest(0);
+			pcXDMA_Test->StartC2H_SpeedTest(0);
 
 			while (1)
 			{
-				auto opt_rtn = pcXDma_Test->GetC2H_SpeedInfo();
+				auto opt_rtn = pcXDMA_Test->GetC2H_SpeedInfo();
 
 				if (opt_rtn.has_value())
 				{
 					auto vecSpeed = opt_rtn.value();
 					for (size_t i = 0; i < vecSpeed.size(); i++)
 					{
-						DEBUG(DEBUG_LEVEL_INFO, "C2H speed = %.04f MB/s.", vecSpeed[i]);
+						DEBUG(DEBUG_LEVEL_INFO, "C2H speed = %.06f MB/s.", vecSpeed[i]);
 					}
 				}
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			}
 
-			pcXDma_Test->StopC2H_SpeedTest();
+			pcXDMA_Test->StopC2H_SpeedTest();
 		}
 		break;
 		case _USER_CMD_TYPE::FULL_DUPLEX_TEST:
 		{
-			pcXDma_Test->StartH2C_SpeedTest(0);
-			pcXDma_Test->StartC2H_SpeedTest(0);
+			pcXDMA_Test->StartH2C_SpeedTest(0);
+			pcXDMA_Test->StartC2H_SpeedTest(0);
 
 			while (1)
 			{
-				auto opt_rtn = pcXDma_Test->GetH2C_SpeedInfo();
+				auto opt_rtn = pcXDMA_Test->GetH2C_SpeedInfo();
 
 				if (opt_rtn.has_value())
 				{
 					auto vecSpeed = opt_rtn.value();
 					for (size_t i = 0; i < vecSpeed.size(); i++)
 					{
-						DEBUG(DEBUG_LEVEL_INFO, "H2C speed = %.04f MB/s.", vecSpeed[i]);
+						DEBUG(DEBUG_LEVEL_INFO, "H2C speed = %.06f MB/s.", vecSpeed[i]);
 					}
 				}
 
-				opt_rtn = pcXDma_Test->GetC2H_SpeedInfo();
+				opt_rtn = pcXDMA_Test->GetC2H_SpeedInfo();
 
 				if (opt_rtn.has_value())
 				{
 					auto vecSpeed = opt_rtn.value();
 					for (size_t i = 0; i < vecSpeed.size(); i++)
 					{
-						DEBUG(DEBUG_LEVEL_INFO, "C2H speed = %.04f MB/s.", vecSpeed[i]);
+						DEBUG(DEBUG_LEVEL_INFO, "C2H speed = %.06f MB/s.", vecSpeed[i]);
 					}
 				}
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			}
 
-			pcXDma_Test->StopC2H_SpeedTest();
-			pcXDma_Test->StopH2C_SpeedTest();
+			pcXDMA_Test->StopC2H_SpeedTest();
+			pcXDMA_Test->StopH2C_SpeedTest();
 		}
 		break;
 		default:

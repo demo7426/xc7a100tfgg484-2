@@ -41,11 +41,9 @@ private:
 
     QTimer m_cTimer;        //定时器
 
-    std::vector<double> m_vecx;
-
     static constexpr qint32 m_nMaxPointNum = 1200; //最大数据量
     
-    hzcc::CXDMA_Test_Base* m_pcXDma_Test = nullptr;
+    hzcc::CXDMA_Test_Base* m_pcXDMA_Test = nullptr;
 
     std::optional<double> m_dbYAxis_LowerLimit = std::nullopt;              //y轴数据下限             
     std::optional<double> m_dbYAxis_UpperLimit = std::nullopt;              //y轴数据上限

@@ -29,6 +29,13 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 
 namespace hzcc
 {
+	typedef struct _SPEED_INFO
+	{
+		double Speed;			//速度信息;单位:MB/s
+		long long Time;			//时刻信息;单位:毫秒
+		double AverageSpeed;	//平均速度;单位:MB/s
+	}SPEED_INFO, *PSPEED_INFO;
+
 	class LCB_DLLEXPORT CXDMA_Test_Base
 	{
 	public:
@@ -77,7 +84,7 @@ namespace hzcc
 		/// 获取h2c的速度信息
 		/// </summary>
 		/// <returns></returns>
-		virtual std::optional<std::vector<double>> GetH2C_SpeedInfo();
+		virtual std::optional<std::vector<SPEED_INFO>> GetH2C_SpeedInfo();
 
 		/// <summary>
 		/// 停止h2c速度测试
@@ -97,7 +104,7 @@ namespace hzcc
 		/// 获取c2h的速度信息
 		/// </summary>
 		/// <returns></returns>
-		virtual std::optional<std::vector<double>> GetC2H_SpeedInfo();
+		virtual std::optional<std::vector<SPEED_INFO>> GetC2H_SpeedInfo();
 
 		/// <summary>
 		/// 停止c2h速度测试
@@ -119,11 +126,11 @@ namespace hzcc
 		unsigned int FindDevice(GUID tGuid);
 	};
 
-	class LCB_DLLEXPORT CXilinx_XDma_Test: public CXDMA_Test_Base
+	class LCB_DLLEXPORT CXilinx_XDMA_Test: public CXDMA_Test_Base
 	{
 	public:
-		CXilinx_XDma_Test();
-		~CXilinx_XDma_Test() {};
+		CXilinx_XDMA_Test();
+		~CXilinx_XDMA_Test() {};
 
 		/// <summary>
 		/// 开始h2c数据测试
@@ -166,8 +173,8 @@ namespace hzcc
 		/// <summary>
 		/// 获取h2c的速度信息
 		/// </summary>
-		/// <returns>速度信息;单位:MB/s</returns>
-		std::optional<std::vector<double>> GetH2C_SpeedInfo() override;
+		/// <returns>多个std::pair<速度信息;单位:MB/s--时刻信息;单位:毫秒></returns>
+		std::optional<std::vector<SPEED_INFO>> GetH2C_SpeedInfo() override;
 
 		/// <summary>
 		/// 停止h2c速度测试
@@ -186,8 +193,8 @@ namespace hzcc
 		/// <summary>
 		/// 获取c2h的速度信息
 		/// </summary>
-		/// <returns></returns>
-		std::optional<std::vector<double>> GetC2H_SpeedInfo() override;
+		/// <returns>多个std::pair<速度信息;单位:MB/s--时刻信息;单位:毫秒></returns>
+		std::optional<std::vector<SPEED_INFO>> GetC2H_SpeedInfo() override;
 
 		/// <summary>
 		/// 停止c2h速度测试
@@ -223,10 +230,10 @@ namespace hzcc
 		std::vector<std::thread*> m_vecThC2H;		//c2h线程对象
 		std::vector<int8_t> m_vecC2HIsRun;
 		
-		std::vector<double> m_vecH2CSpeed;
+		std::vector<SPEED_INFO> m_vecH2CSpeed;
 		std::mutex m_mutH2CSpeed;
 
-		std::vector<double> m_vecC2HSpeed;
+		std::vector<SPEED_INFO> m_vecC2HSpeed;
 		std::mutex m_mutC2HSpeed;
 	};
 

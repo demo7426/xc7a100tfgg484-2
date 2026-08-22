@@ -51,7 +51,7 @@ namespace hzcc
         return 0;
     }
 
-    std::optional<std::vector<double>> CXDMA_Test_Base::GetH2C_SpeedInfo()
+    std::optional<std::vector<SPEED_INFO>> CXDMA_Test_Base::GetH2C_SpeedInfo()
     {
         return std::nullopt;
     }
@@ -66,9 +66,9 @@ namespace hzcc
         return 0;
     }
 
-    std::optional<std::vector<double>> CXDMA_Test_Base::GetC2H_SpeedInfo()
+    std::optional<std::vector<SPEED_INFO>> CXDMA_Test_Base::GetC2H_SpeedInfo()
     {
-        return std::optional<std::vector<double>>();
+        return std::nullopt;
     }
 
     int CXDMA_Test_Base::StopC2H_SpeedTest()
@@ -136,7 +136,7 @@ namespace hzcc
         return dwIndex;
     }
 
-    CXilinx_XDma_Test::CXilinx_XDma_Test()
+    CXilinx_XDMA_Test::CXilinx_XDMA_Test()
     {
         auto dwDevNum = this->FindDevice(GUID_DEVINTERFACE_XDMA);
 
@@ -150,7 +150,7 @@ namespace hzcc
     }
 
 
-    int CXilinx_XDma_Test::StartH2CTest()
+    int CXilinx_XDMA_Test::StartH2CTest()
     {
         HANDLE hFile = NULL;
 
@@ -200,7 +200,7 @@ namespace hzcc
     }
 
 
-    int CXilinx_XDma_Test::StartC2HTest()
+    int CXilinx_XDMA_Test::StartC2HTest()
     {
         HANDLE hFile = NULL;
 
@@ -249,7 +249,7 @@ namespace hzcc
         return 0;
     }
 
-    int CXilinx_XDma_Test::StartC2H_AsyncTest()
+    int CXilinx_XDMA_Test::StartC2H_AsyncTest()
     {
         HANDLE hFile = NULL;
 
@@ -289,7 +289,7 @@ namespace hzcc
                     continue;
                 }
 
-                if (!ReadFileEx(hFile, (LPVOID)pchReadBuf, len, ptOverlapped, CXilinx_XDma_Test::ReadFile_Overlapped_Completion_Routine))
+                if (!ReadFileEx(hFile, (LPVOID)pchReadBuf, len, ptOverlapped, CXilinx_XDMA_Test::ReadFile_Overlapped_Completion_Routine))
                 {
                     DEBUG(DEBUG_LEVEL_ERROR, "ReadFileEx is failed, len = %u.", len);
                     break;
@@ -311,7 +311,7 @@ namespace hzcc
         return 0;
     }
 
-    int CXilinx_XDma_Test::LoopTest()
+    int CXilinx_XDMA_Test::LoopTest()
     {
         HANDLE hC2H_File = NULL;
         HANDLE hH2C_File = NULL;
@@ -399,7 +399,7 @@ namespace hzcc
         return 0;
     }
 
-    int CXilinx_XDma_Test::StartH2C_SpeedTest(int _DevIndex)
+    int CXilinx_XDMA_Test::StartH2C_SpeedTest(int _DevIndex)
     {
         auto func = [this](const int IsRunIndex, std::basic_string<TCHAR> _H2C_Path) {
             HANDLE hFile = NULL;
@@ -417,6 +417,8 @@ namespace hzcc
 
             auto start_clock = std::chrono::steady_clock::now();
             auto end_clock = start_clock;
+            auto ini_clock = start_clock;           //初始时刻
+            UINT64 totalBytes = 0;                  //总数据量;单位:Byte
 
             //测试每一个xdma设备
             hFile = CreateFile(_H2C_Path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -429,6 +431,7 @@ namespace hzcc
             RtlFillMemory(pchWriteBuf, MAX_BUF_SIZE, 1);
 
             start_clock = std::chrono::steady_clock::now();
+            ini_clock = start_clock;
 
             while (this->m_vecH2CIsRun[IsRunIndex])
             {
@@ -441,17 +444,25 @@ namespace hzcc
                 }
 
                 lWriteSum += lpNumberOfBytesWritten;
+                totalBytes += lpNumberOfBytesWritten;
 
                 end_clock = std::chrono::steady_clock::now();
 
-                auto ns = (end_clock - start_clock).count();
+                auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_clock - start_clock).count();
 
                 if (ns >= 1000'000'000)
                 {
                     {
+                        SPEED_INFO tSpeedInfo = { 0 };
+
+                        tSpeedInfo.Speed = lWriteSum * 1.0 / 1000 / 1000 / (ns * 1.0 / 1000'000'000);
+                        tSpeedInfo.Time = std::chrono::duration_cast<std::chrono::milliseconds>(end_clock - ini_clock).count();
+                        tSpeedInfo.AverageSpeed = (totalBytes * 1.0 / 1000 / 1000) / 
+                            (std::chrono::duration_cast<std::chrono::nanoseconds>(end_clock - ini_clock).count() / 1000'000'000);
+
                         std::unique_lock<std::mutex> lock(m_mutH2CSpeed);
 
-                        m_vecH2CSpeed.push_back(lWriteSum * 1.0 / 1000 / 1000 / (ns * 1.0 / 1000'000'000));
+                        m_vecH2CSpeed.push_back(std::move(tSpeedInfo));
                     }
 
                     lWriteSum = 0;
@@ -491,16 +502,14 @@ namespace hzcc
         return 0;
     }
 
-    std::optional<std::vector<double>> CXilinx_XDma_Test::GetH2C_SpeedInfo()
+    std::optional<std::vector<SPEED_INFO>> CXilinx_XDMA_Test::GetH2C_SpeedInfo()
     {
-        std::optional<std::vector<double>> opt_rtn;
-
         {
             std::unique_lock<std::mutex> lock(m_mutH2CSpeed);
 
             if (!m_vecH2CSpeed.empty())
             {
-                opt_rtn = m_vecH2CSpeed;
+                auto opt_rtn = m_vecH2CSpeed;
                 m_vecH2CSpeed.clear();
 
                 return opt_rtn;
@@ -510,7 +519,7 @@ namespace hzcc
         return std::nullopt;
     }
 
-    int CXilinx_XDma_Test::StopH2C_SpeedTest()
+    int CXilinx_XDMA_Test::StopH2C_SpeedTest()
     {
         for (size_t i = 0; i < m_vecThH2C.size(); i++)
         {
@@ -535,7 +544,7 @@ namespace hzcc
         return 0;
     }
 
-    int CXilinx_XDma_Test::StartC2H_SpeedTest(int _DevIndex)
+    int CXilinx_XDMA_Test::StartC2H_SpeedTest(int _DevIndex)
     {
         auto func = [this](const int IsRunIndex, std::basic_string<TCHAR> _C2H_Path) {
             HANDLE hFile = NULL;
@@ -553,6 +562,8 @@ namespace hzcc
 
             auto start_clock = std::chrono::steady_clock::now();
             auto end_clock = start_clock;
+            auto ini_clock = start_clock;           //初始时刻
+            UINT64 totalBytes = 0;                  //总数据量;单位:Byte
 
             //测试每一个xdma设备
             hFile = CreateFile(_C2H_Path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -563,6 +574,7 @@ namespace hzcc
             }
 
             start_clock = std::chrono::steady_clock::now();
+            ini_clock = start_clock;
 
             while (this->m_vecC2HIsRun[IsRunIndex])
             {
@@ -575,17 +587,25 @@ namespace hzcc
                 }
 
                 lWriteSum += lpNumberOfBytesRead;
+                totalBytes += lpNumberOfBytesRead;
 
                 end_clock = std::chrono::steady_clock::now();
 
-                auto ns = (end_clock - start_clock).count();
+                auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_clock - start_clock).count();
 
                 if (ns >= 1000'000'000)
                 {
                     {
+                        SPEED_INFO tSpeedInfo = { 0 };
+
+                        tSpeedInfo.Speed = lWriteSum * 1.0 / 1000 / 1000 / (ns * 1.0 / 1000'000'000);
+                        tSpeedInfo.Time = std::chrono::duration_cast<std::chrono::milliseconds>(end_clock - ini_clock).count();
+                        tSpeedInfo.AverageSpeed = (totalBytes * 1.0 / 1000 / 1000) /
+                            (std::chrono::duration_cast<std::chrono::nanoseconds>(end_clock - ini_clock).count() / 1000'000'000);
+
                         std::unique_lock<std::mutex> lock(m_mutC2HSpeed);
 
-                        m_vecC2HSpeed.push_back(lWriteSum * 1.0 / 1000 / 1000 / (ns * 1.0 / 1000'000'000));
+                        m_vecC2HSpeed.push_back(std::move(tSpeedInfo));
                     }
 
                     lWriteSum = 0;
@@ -625,16 +645,14 @@ namespace hzcc
         return 0;
     }
 
-    std::optional<std::vector<double>> CXilinx_XDma_Test::GetC2H_SpeedInfo()
+    std::optional<std::vector<SPEED_INFO>> CXilinx_XDMA_Test::GetC2H_SpeedInfo()
     {
-        std::optional<std::vector<double>> opt_rtn;
-
         {
             std::unique_lock<std::mutex> lock(m_mutC2HSpeed);
 
             if (!m_vecC2HSpeed.empty())
             {
-                opt_rtn = m_vecC2HSpeed;
+                auto opt_rtn = m_vecC2HSpeed;
                 m_vecC2HSpeed.clear();
 
                 return opt_rtn;
@@ -644,7 +662,7 @@ namespace hzcc
         return std::nullopt;
     }
 
-    int CXilinx_XDma_Test::StopC2H_SpeedTest()
+    int CXilinx_XDMA_Test::StopC2H_SpeedTest()
     {
         for (size_t i = 0; i < m_vecThC2H.size(); i++)
         {
@@ -669,7 +687,7 @@ namespace hzcc
         return 0;
     }
 
-    int CXilinx_XDma_Test::StartH2C_AsyncTest()
+    int CXilinx_XDMA_Test::StartH2C_AsyncTest()
     {
         HANDLE hFile = NULL;
 
@@ -710,7 +728,7 @@ namespace hzcc
                     continue;
                 }
 
-                if (!WriteFileEx(hFile, (LPVOID)pchWriteBuf, len, ptOverlapped, CXilinx_XDma_Test::WriteFile_Overlapped_Completion_Routine))
+                if (!WriteFileEx(hFile, (LPVOID)pchWriteBuf, len, ptOverlapped, CXilinx_XDMA_Test::WriteFile_Overlapped_Completion_Routine))
                 {
                     DEBUG(DEBUG_LEVEL_ERROR, "WriteFileEx is failed, len = %u.", len);
                     break;
@@ -732,7 +750,7 @@ namespace hzcc
         return 0;
     }
 
-    VOID WINAPI CXilinx_XDma_Test::WriteFile_Overlapped_Completion_Routine(
+    VOID WINAPI CXilinx_XDMA_Test::WriteFile_Overlapped_Completion_Routine(
         _In_    DWORD dwErrorCode,
         _In_    DWORD dwNumberOfBytesTransfered,
         _Inout_ LPOVERLAPPED lpOverlapped)
@@ -746,7 +764,7 @@ namespace hzcc
         }
     }
 
-    VOID WINAPI CXilinx_XDma_Test::ReadFile_Overlapped_Completion_Routine(
+    VOID WINAPI CXilinx_XDMA_Test::ReadFile_Overlapped_Completion_Routine(
         _In_    DWORD dwErrorCode,
         _In_    DWORD dwNumberOfBytesTransfered,
         _Inout_ LPOVERLAPPED lpOverlapped)

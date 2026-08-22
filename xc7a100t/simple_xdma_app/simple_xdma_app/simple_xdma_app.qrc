@@ -1,4 +1,5 @@
 <RCC>
-    <qresource prefix="simple_xdma_app">
+    <qresource prefix="/image">
+        <file>res/image/x.png</file>
     </qresource>
 </RCC>

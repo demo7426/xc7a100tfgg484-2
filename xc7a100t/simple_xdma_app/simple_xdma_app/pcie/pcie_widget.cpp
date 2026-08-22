@@ -31,10 +31,10 @@ CPCIe_Widget::~CPCIe_Widget()
 {
 	m_cTimer.stop();
 
-	if (m_pcXDma_Test)
+	if (m_pcXDMA_Test)
 	{
-		delete m_pcXDma_Test;
-		m_pcXDma_Test = nullptr;
+		delete m_pcXDMA_Test;
+		m_pcXDMA_Test = nullptr;
 	}
 }
 
@@ -46,8 +46,6 @@ void CPCIe_Widget::InitUi(void) noexcept
 	ui.comboBox_RegSize->setCurrentText(tr("32 Bit"));
 
 	////////////////////////////////数据初始化设置////////////////////////////////
-
-	m_vecx.clear();
 
 	m_dbYAxis_LowerLimit = std::nullopt;
 	m_dbYAxis_UpperLimit = std::nullopt;
@@ -61,8 +59,8 @@ void CPCIe_Widget::InitUi(void) noexcept
 	m_vecCPGraph[0]->setName(tr("PCIe H2C"));
 	m_vecCPGraph[1]->setName(tr("PCIe C2H"));
 
-	m_vecCPGraph[0]->setPen(QPen(QColor(255, 0, 0)));
-	m_vecCPGraph[1]->setPen(QPen(QColor(0, 255, 0)));
+	m_vecCPGraph[0]->setPen(QPen(QColor(0, 255, 0)));
+	m_vecCPGraph[1]->setPen(QPen(QColor(0, 0, 255)));
 
 	ui.widgetCustomPlot->xAxis->setLabel(tr("Time(s)"));
 	ui.widgetCustomPlot->yAxis->setLabel(tr("Speed(MB/s)"));
@@ -78,7 +76,7 @@ void CPCIe_Widget::InitUi(void) noexcept
 	m_cTimer.setTimerType(Qt::TimerType::VeryCoarseTimer);
 	m_cTimer.setInterval(200);
 
-	m_pcXDma_Test = new hzcc::CXilinx_XDma_Test();
+	m_pcXDMA_Test = new hzcc::CXilinx_XDMA_Test();
 
 	ui.lineEdit_H2CSpeed->setText(tr("0"));
 	ui.lineEdit_C2HSpeed->setText(tr("0"));
@@ -98,20 +96,14 @@ void CPCIe_Widget::InitSignalSlots(void) noexcept
 			it->data()->clear();
 		}
 
-		m_vecx.clear();
-		for (size_t i = 0; i < m_vecCPGraph.size(); i++)
-		{
-			m_vecx.push_back(0);
-		}
-
 		ui.widgetCustomPlot->xAxis->rescale();
 		ui.widgetCustomPlot->yAxis->rescale();
 
 		ui.widgetCustomPlot->replot();
 
 		//开始h2c测试
-		m_pcXDma_Test->StartH2C_SpeedTest(0);
-		m_pcXDma_Test->StartC2H_SpeedTest(0);
+		m_pcXDMA_Test->StartH2C_SpeedTest(0);
+		m_pcXDMA_Test->StartC2H_SpeedTest(0);
 
 		ui.lineEdit_H2CSpeed->setText(tr("0"));
 		ui.lineEdit_C2HSpeed->setText(tr("0"));
@@ -120,16 +112,18 @@ void CPCIe_Widget::InitSignalSlots(void) noexcept
 
 		ui.pushButton_Start->setEnabled(false);
 		ui.pushButton_Stop->setEnabled(true);
+		ui.groupBox_RegControl->setEnabled(false);
 		});
 
 	connect(ui.pushButton_Stop, &QPushButton::clicked, this, [this]() {
-		m_pcXDma_Test->StopH2C_SpeedTest();
-		m_pcXDma_Test->StopC2H_SpeedTest();
+		m_pcXDMA_Test->StopH2C_SpeedTest();
+		m_pcXDMA_Test->StopC2H_SpeedTest();
 
 		m_cTimer.stop();
 
 		ui.pushButton_Start->setEnabled(true);
 		ui.pushButton_Stop->setEnabled(false);
+		ui.groupBox_RegControl->setEnabled(true);
 		});
 
 }
@@ -156,80 +150,62 @@ void CPCIe_Widget::RefreshGraph(void)
 
 	m_x += dbInterval;
 #else
-	auto opt_rtn_h2c = m_pcXDma_Test->GetH2C_SpeedInfo();
+	auto opt_rtn_h2c = m_pcXDMA_Test->GetH2C_SpeedInfo();
 	if (opt_rtn_h2c.has_value())
 	{
 		auto vecSpeed = opt_rtn_h2c.value();
 		for (size_t i = 0; i < vecSpeed.size(); i++)
 		{
-			m_vecCPGraph[0]->addData(m_vecx[0], vecSpeed[i]);
+			m_vecCPGraph[0]->addData(vecSpeed[i].Time / 1000.0, vecSpeed[i].Speed);
 
 			// 不管超了多少个，一律删掉窗口外的所有点
-			double left = m_vecx[0] - m_nMaxPointNum * dbInterval;
+			double left = vecSpeed[i].Speed / 1000.0 - m_nMaxPointNum * dbInterval;
 
 			m_vecCPGraph[0]->data()->removeBefore(left);
 
 			if (!m_dbYAxis_LowerLimit.has_value())
-				m_dbYAxis_LowerLimit = vecSpeed[i];
+				m_dbYAxis_LowerLimit = vecSpeed[i].Speed;
 			else
-				m_dbYAxis_LowerLimit < vecSpeed[i] ? 0 : m_dbYAxis_LowerLimit = vecSpeed[i];
+				m_dbYAxis_LowerLimit < vecSpeed[i].Speed ? 0 : m_dbYAxis_LowerLimit = vecSpeed[i].Speed;
 
 			if (!m_dbYAxis_UpperLimit.has_value())
-				m_dbYAxis_UpperLimit = vecSpeed[i];
+				m_dbYAxis_UpperLimit = vecSpeed[i].Speed;
 			else
-				m_dbYAxis_UpperLimit > vecSpeed[i] ? 0 : m_dbYAxis_UpperLimit = vecSpeed[i];
-
-			m_vecx[0] += dbInterval;
+				m_dbYAxis_UpperLimit > vecSpeed[i].Speed ? 0 : m_dbYAxis_UpperLimit = vecSpeed[i].Speed;
 		}
 		
-		//计算平均值
-		QCPGraphDataContainer* data = m_vecCPGraph[0]->data().data();
-		double dbSum = 0;
-
-		for (auto it = data->begin(); it != data->end(); ++it) {
-			dbSum += it->value;
-		}
-		ui.lineEdit_H2CSpeed->setText(QString::asprintf("%.04f", dbSum / data->size()) + tr(" MB/s"));
+		ui.lineEdit_H2CSpeed->setText(QString::asprintf("%.06f", vecSpeed.back().AverageSpeed) + tr(" MB/s"));
 	}
 
-	auto opt_rtn_c2h = m_pcXDma_Test->GetC2H_SpeedInfo();
+	auto opt_rtn_c2h = m_pcXDMA_Test->GetC2H_SpeedInfo();
 	if (opt_rtn_c2h.has_value())
 	{
 		auto vecSpeed = opt_rtn_c2h.value();
 		for (size_t i = 0; i < vecSpeed.size(); i++)
 		{
-			m_vecCPGraph[1]->addData(m_vecx[1], vecSpeed[i]);
+			m_vecCPGraph[1]->addData(vecSpeed[i].Time / 1000.0, vecSpeed[i].Speed);
 
 			// 不管超了多少个，一律删掉窗口外的所有点
-			double left = m_vecx[1] - m_nMaxPointNum * dbInterval;
+			double left = vecSpeed[i].Time / 1000.0 - m_nMaxPointNum * dbInterval;
 
 			m_vecCPGraph[1]->data()->removeBefore(left);
 
-			ui.widgetCustomPlot->xAxis->setRange(left < 0 ? 0.0 : left, m_vecx[1] > m_vecx[0] ? m_vecx[1]: m_vecx[0]);
+			ui.widgetCustomPlot->xAxis->setRange(left < 0 ? 0.0 : left, vecSpeed[i].Time / 1000.0);
 
 			if (!m_dbYAxis_LowerLimit.has_value())
-				m_dbYAxis_LowerLimit = vecSpeed[i];
+				m_dbYAxis_LowerLimit = vecSpeed[i].Speed;
 			else
-				m_dbYAxis_LowerLimit < vecSpeed[i] ? 0 : m_dbYAxis_LowerLimit = vecSpeed[i];
+				m_dbYAxis_LowerLimit < vecSpeed[i].Speed ? 0 : m_dbYAxis_LowerLimit = vecSpeed[i].Speed;
 
 			if (!m_dbYAxis_UpperLimit.has_value())
-				m_dbYAxis_UpperLimit = vecSpeed[i];
+				m_dbYAxis_UpperLimit = vecSpeed[i].Speed;
 			else
-				m_dbYAxis_UpperLimit > vecSpeed[i] ? 0 : m_dbYAxis_UpperLimit = vecSpeed[i];
+				m_dbYAxis_UpperLimit > vecSpeed[i].Speed ? 0 : m_dbYAxis_UpperLimit = vecSpeed[i].Speed;
 
 			ui.widgetCustomPlot->yAxis->setRange(m_dbYAxis_LowerLimit.value_or(0.0), m_dbYAxis_UpperLimit.value_or(0.0));
-
-			m_vecx[1] += dbInterval;
 		}
 
-		//计算平均值
-		QCPGraphDataContainer* data = m_vecCPGraph[1]->data().data();
-		double dbSum = 0;
-
-		for (auto it = data->begin(); it != data->end(); ++it) {
-			dbSum += it->value;
-		}
-		ui.lineEdit_C2HSpeed->setText(QString::asprintf("%.04f", dbSum / data->size()) + tr(" MB/s"));
+		ui.lineEdit_C2HSpeed->setText(QString::asprintf("%.06f", vecSpeed.back().AverageSpeed) + tr(" MB/s"));
 	}
 
 	if (opt_rtn_h2c.has_value() || opt_rtn_c2h.has_value())
