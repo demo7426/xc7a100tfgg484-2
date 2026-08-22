@@ -217,8 +217,11 @@ namespace hzcc
 
 
 	private:
-		std::vector<std::jthread*> m_vecJThH2C;		//h2c线程对象
-		std::vector<std::jthread*> m_vecJThC2H;		//c2h线程对象
+		std::vector<std::thread*> m_vecThH2C;		//h2c线程对象
+		std::vector<int8_t> m_vecH2CIsRun;
+
+		std::vector<std::thread*> m_vecThC2H;		//c2h线程对象
+		std::vector<int8_t> m_vecC2HIsRun;
 		
 		std::vector<double> m_vecH2CSpeed;
 		std::mutex m_mutH2CSpeed;

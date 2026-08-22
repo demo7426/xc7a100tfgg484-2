@@ -401,7 +401,7 @@ namespace hzcc
 
     int CXilinx_XDma_Test::StartH2C_SpeedTest(int _DevIndex)
     {
-        auto func = [this](std::stop_token _st, std::basic_string<TCHAR> _H2C_Path) {
+        auto func = [this](const int IsRunIndex, std::basic_string<TCHAR> _H2C_Path) {
             HANDLE hFile = NULL;
 
             PCHAR pchWriteBuf = (PCHAR)_aligned_malloc(MAX_BUF_SIZE, ALIGNED_SIZE);
@@ -430,7 +430,7 @@ namespace hzcc
 
             start_clock = std::chrono::steady_clock::now();
 
-            while (!_st.stop_requested())
+            while (this->m_vecH2CIsRun[IsRunIndex])
             {
                 lpNumberOfBytesWritten = 0;
 
@@ -474,6 +474,8 @@ namespace hzcc
             return;
             };
 
+        this->StopH2C_SpeedTest();
+
         m_vecH2CSpeed.reserve(64);
 
         if (_DevIndex >= m_vecH2C_Path.size())
@@ -483,7 +485,8 @@ namespace hzcc
         }
 
         //测试当前的PCI/PCIe设备
-        m_vecJThH2C.push_back(new std::jthread(func, m_vecH2C_Path[_DevIndex]));
+        m_vecH2CIsRun.push_back(true);
+        m_vecThH2C.push_back(new std::thread(func, _DevIndex, m_vecH2C_Path[_DevIndex]));
         
         return 0;
     }
@@ -509,26 +512,32 @@ namespace hzcc
 
     int CXilinx_XDma_Test::StopH2C_SpeedTest()
     {
-        for (size_t i = 0; i < m_vecJThH2C.size(); i++)
+        for (size_t i = 0; i < m_vecThH2C.size(); i++)
         {
-            if (m_vecJThH2C[i])
+            if (m_vecThH2C[i])
             {
-                m_vecJThH2C[i]->request_stop();
+                m_vecH2CIsRun[i] = false;
+                
+                if(m_vecThH2C[i]->joinable())
+                    m_vecThH2C[i]->join();
 
-                delete m_vecJThH2C[i];
-                m_vecJThH2C[i] = nullptr;
+                delete m_vecThH2C[i];
+                m_vecThH2C[i] = nullptr;
             }
         }
 
-        if(!m_vecJThH2C.empty())
-            m_vecJThH2C.clear();
+        if(!m_vecH2CIsRun.empty())
+            m_vecH2CIsRun.clear();
+        
+        if(!m_vecThH2C.empty())
+            m_vecThH2C.clear();
 
         return 0;
     }
 
     int CXilinx_XDma_Test::StartC2H_SpeedTest(int _DevIndex)
     {
-        auto func = [this](std::stop_token _st, std::basic_string<TCHAR> _C2H_Path) {
+        auto func = [this](const int IsRunIndex, std::basic_string<TCHAR> _C2H_Path) {
             HANDLE hFile = NULL;
 
             PCHAR pchReadBuf = (PCHAR)_aligned_malloc(MAX_BUF_SIZE, ALIGNED_SIZE);
@@ -555,7 +564,7 @@ namespace hzcc
 
             start_clock = std::chrono::steady_clock::now();
 
-            while (!_st.stop_requested())
+            while (this->m_vecC2HIsRun[IsRunIndex])
             {
                 lpNumberOfBytesRead = 0;
 
@@ -599,6 +608,8 @@ namespace hzcc
             return;
             };
 
+        this->StopC2H_SpeedTest();
+
         m_vecC2HSpeed.reserve(64);
 
         if (_DevIndex >= m_vecC2H_Path.size())
@@ -608,7 +619,8 @@ namespace hzcc
         }
 
         //测试当前的PCI/PCIe设备
-        m_vecJThC2H.push_back(new std::jthread(func, m_vecC2H_Path[_DevIndex]));
+        m_vecC2HIsRun.push_back(true);
+        m_vecThC2H.push_back(new std::thread(func, _DevIndex, m_vecC2H_Path[_DevIndex]));
 
         return 0;
     }
@@ -634,19 +646,25 @@ namespace hzcc
 
     int CXilinx_XDma_Test::StopC2H_SpeedTest()
     {
-        for (size_t i = 0; i < m_vecJThC2H.size(); i++)
+        for (size_t i = 0; i < m_vecThC2H.size(); i++)
         {
-            if (m_vecJThC2H[i])
+            if (m_vecThC2H[i])
             {
-                m_vecJThC2H[i]->request_stop();
+                m_vecC2HIsRun[i] = false;
 
-                delete m_vecJThC2H[i];
-                m_vecJThC2H[i] = nullptr;
+                if (m_vecThC2H[i]->joinable())
+                    m_vecThC2H[i]->join();
+
+                delete m_vecThC2H[i];
+                m_vecThC2H[i] = nullptr;
             }
         }
 
-        if (!m_vecJThC2H.empty())
-            m_vecJThC2H.clear();
+        if (!m_vecC2HIsRun.empty())
+            m_vecC2HIsRun.clear();
+        
+        if (!m_vecThC2H.empty())
+            m_vecThC2H.clear();
 
         return 0;
     }
