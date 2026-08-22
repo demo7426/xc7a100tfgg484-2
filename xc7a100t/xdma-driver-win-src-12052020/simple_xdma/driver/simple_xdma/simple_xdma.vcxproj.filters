@@ -68,8 +68,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="XDMA.inx">
+    <Inf Include="simple_xdma.inx">
       <Filter>Driver Files</Filter>
-    </None>
+    </Inf>
   </ItemGroup>
 </Project>

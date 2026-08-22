@@ -71,8 +71,8 @@
   <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <OutDir>$(ProjectDir)..\build\$(Platform)\$(ProjectName)\$(ConfigurationName)\</OutDir>
-    <IntDir>$(ProjectDir)..\build_tmp\$(ProjectName)\$(Platform)\$(ConfigurationName)\</IntDir>
+    <OutDir>$(SolutionDir)build\$(Platform)\$(ProjectName)\$(ConfigurationName)\</OutDir>
+    <IntDir>$(SolutionDir)build_tmp\$(ProjectName)\$(Platform)\$(ConfigurationName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>

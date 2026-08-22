@@ -148,11 +148,67 @@ static void DeviceDefaultInitialize(IN PXDMA_DEVICE xdma) {
     }
 }
 
+// 读取 PCI 配置空间的 BAR0..BAR5，按升序输出「已实现的 memory BAR」的真实物理编号。
+// 资源列表里第 N 个 CmResourceTypeMemory 即对应 realBarIndices[N]。
+static NTSTATUS GetRealBarIndices(IN WDFDEVICE wdfDevice,
+    OUT ULONG realBarIndices[PCI_TYPE0_ADDRESSES],
+    OUT PULONG numRealBars) {
+    *numRealBars = 0;
+
+    BUS_INTERFACE_STANDARD pciBus = { 0 };
+    NTSTATUS status = WdfFdoQueryForInterface(wdfDevice, &GUID_BUS_INTERFACE_STANDARD,
+        (PINTERFACE)&pciBus, sizeof(BUS_INTERFACE_STANDARD), 1, NULL);
+    if (!NT_SUCCESS(status)) {
+        return status;
+    }
+
+    PCI_COMMON_HEADER pciHeader = { 0 };
+    ULONG bytesRead = pciBus.GetBusData(pciBus.Context, PCI_WHICHSPACE_CONFIG,
+        &pciHeader, 0, PCI_COMMON_HDR_LENGTH);
+    if (bytesRead != (ULONG)PCI_COMMON_HDR_LENGTH) {
+        return STATUS_INVALID_DEVICE_REQUEST;
+    }
+
+    // BAR0..BAR5 位于 u.type0.BaseAddresses[0..5]
+    for (ULONG i = 0; i < PCI_TYPE0_ADDRESSES; i++) {
+        ULONG barVal = pciHeader.u.type0.BaseAddresses[i];
+        if (barVal == 0) {
+            continue;                          // 未实现
+        }
+        if (barVal & 0x1) {
+            continue;                          // I/O BAR，跳过
+        }
+        BOOLEAN is64bit = (((barVal >> 1) & 0x3) == 0x2); // bits[2:1]==10
+        BOOLEAN prefetchable = (barVal & 0x8) ? TRUE : FALSE;
+        realBarIndices[(*numRealBars)++] = i;
+
+        TraceInfo(DBG_INIT, "%s, bar[%u] raw=0x%x, addr=0x%x, %s-bit%s",
+            __func__, i, barVal, barVal & 0xFFFFFFF0,
+            is64bit ? "64" : "32",
+            prefetchable ? ", prefetchable" : ", non-prefetchable");
+
+        if (is64bit) {
+            i++;                               // 高 32 位占用下一槽
+        }
+    }
+    return STATUS_SUCCESS;
+}
+
 // Iterate through PCIe resources and map BARS into host memory
 static NTSTATUS MapBARs(IN PXDMA_DEVICE xdma, IN WDFCMRESLIST ResourcesTranslated) {
-
     const ULONG numResources = WdfCmResourceListGetCount(ResourcesTranslated);
     TraceVerbose(DBG_INIT, "# PCIe resources = %d", numResources);
+
+#if 1
+    // 先从 PCI 配置空间恢复真实 BAR 编号
+    ULONG realBarIndices[PCI_TYPE0_ADDRESSES] = { 0 };
+    ULONG numRealBars = 0;
+    NTSTATUS status = GetRealBarIndices(xdma->wdfDevice, realBarIndices, &numRealBars);
+    if (!NT_SUCCESS(status)) {
+        TraceError(DBG_INIT, "GetRealBarIndices() failed: %!STATUS!", status);
+        return status;
+    }
+#endif
 
     for (UINT i = 0; i < numResources; i++) {
         PCM_PARTIAL_RESOURCE_DESCRIPTOR resource = WdfCmResourceListGetDescriptor(ResourcesTranslated, i);
@@ -172,15 +228,18 @@ static NTSTATUS MapBARs(IN PXDMA_DEVICE xdma, IN WDFCMRESLIST ResourcesTranslate
         case CmResourceTypeMemory:
         {
             xdma->barLength[xdma->numBars] = resource->u.Memory.Length;
+
             xdma->bar[xdma->numBars] = MmMapIoSpace(resource->u.Memory.Start,
                 resource->u.Memory.Length, MmNonCached);
             if (xdma->bar[xdma->numBars] == NULL) {
                 TraceError(DBG_INIT, "MmMapIoSpace returned NULL! for BAR%u", xdma->numBars);
                 return STATUS_DEVICE_CONFIGURATION_ERROR;
             }
+
             TraceInfo(DBG_INIT, "MM BAR %d (addr:0x%llx, length:0x%x) mapped at 0x%08p",
                 xdma->numBars, resource->u.Memory.Start.QuadPart,
                 resource->u.Memory.Length, xdma->bar[xdma->numBars]);
+            
             xdma->numBars++;
 
             TraceInfo(DBG_INIT, "%s, CmResourceTypeMemory: numBars = %u", __func__, xdma->numBars);
