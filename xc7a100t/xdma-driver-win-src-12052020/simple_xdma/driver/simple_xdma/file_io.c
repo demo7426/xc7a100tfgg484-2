@@ -61,13 +61,10 @@
 -- |
 -- |-> IO Request -> EvtIoRead()--> ReadBarToRequest()               // PCI BAR access
 --               |            |---> EvtIoReadDma()                   // normal dma c2h transfer
---               |            |---> EvtIoReadEngineRing()            // for streaming interface
---               |            |---> CopyDescriptorsToRequestMemory() // get dma descriptors to user-space
 --               |            |---> ServiceUserEvent()               // wait on user interrupt
 --               |
 --               |-> EvtIoWrite()-> WriteBarFromRequest()            // PCI BAR access
 --                             |--> EvtIoWriteDma()                  // normal DMA H2C transfer
---                             |--> WriteBypassDescriptor()          // write descriptors from userspace to bypass BARs
 --
 -------------------------------------------------------------------------------
 */
@@ -105,7 +102,6 @@ const static struct {
     { DEVNODE_TYPE_C2H,         XDMA_FILE_C2H_3,        3 },
     { DEVNODE_TYPE_USER,        XDMA_FILE_USER,         0 },
     { DEVNODE_TYPE_CONTROL,     XDMA_FILE_CONTROL,      0 },
-    { DEVNODE_TYPE_BYPASS,      XDMA_FILE_BYPASS,       0 },
     { DEVNODE_TYPE_EVENTS,      XDMA_FILE_EVENT_0,      0 },
     { DEVNODE_TYPE_EVENTS,      XDMA_FILE_EVENT_1,      1 },
     { DEVNODE_TYPE_EVENTS,      XDMA_FILE_EVENT_2,      2 },
@@ -175,14 +171,6 @@ VOID EvtDeviceFileCreate(IN WDFDEVICE device, IN WDFREQUEST Request, IN WDFFILEO
         }
         devNode->u.bar = xdma->bar[xdma->userBarIdx];
         break;
-    case DEVNODE_TYPE_BYPASS:
-        if (xdma->bypassBarIdx < 0) {
-            TraceError(DBG_IO, "Failed to create 'bypass' device file. User BAR does not exist!");
-            status = STATUS_INVALID_PARAMETER;
-            goto ErrExit;
-        }
-        devNode->u.bar = xdma->bar[xdma->bypassBarIdx];
-        break;
     case DEVNODE_TYPE_H2C:
     case DEVNODE_TYPE_C2H:
     {
@@ -196,18 +184,9 @@ VOID EvtDeviceFileCreate(IN WDFDEVICE device, IN WDFREQUEST Request, IN WDFFILEO
             goto ErrExit;
         }
 
-        if ((engine->type == EngineType_ST) && (dir == C2H)) {
-            EngineRingSetup(engine);
-        }
-
         devNode->u.engine = engine;
         devNode->queue = ctx->engineQueue[dir][index];
-        TraceVerbose(DBG_IO, "pollMode=%u", devNode->u.engine->poll);
-        if (devNode->u.engine->poll) {
-            EngineDisableInterrupt(devNode->u.engine);
-        } else {
-            EngineEnableInterrupt(devNode->u.engine);
-        }
+        EngineEnableInterrupt(devNode->u.engine);
         break;
     }
     case DEVNODE_TYPE_EVENTS:
@@ -231,20 +210,15 @@ VOID EvtFileClose(IN WDFFILEOBJECT FileObject) {
 VOID EvtFileCleanup(IN WDFFILEOBJECT FileObject) {
     PUNICODE_STRING fileName = WdfFileObjectGetFileName(FileObject);
     PFILE_CONTEXT file = GetFileContext(FileObject);
-	
-    if (file->devType == DEVNODE_TYPE_C2H) {
-        if (file->u.engine->type == EngineType_ST) {
-            EngineRingTeardown(file->u.engine);
+
+    if (file->devType == DEVNODE_TYPE_CONTROL || file->devType == DEVNODE_TYPE_USER) {
+        if (file->mdl != NULL) {
+            MmUnmapLockedPages(file->virtAddress, file->mdl);
+            IoFreeMdl(file->mdl);
+            file->mdl = NULL;
         }
     }
-	if (file->devType == DEVNODE_TYPE_CONTROL || file->devType == DEVNODE_TYPE_USER || file->devType == DEVNODE_TYPE_BYPASS) {
-		if (file->mdl != NULL) {
-            MmUnmapLockedPages(file->virtAddress, file->mdl);
-			IoFreeMdl(file->mdl);
-            file->mdl = NULL;
-		}
-	}
-	
+
     TraceVerbose(DBG_IO, "Cleanup %wZ", fileName);
 }
 
@@ -369,7 +343,6 @@ VOID EvtIoRead(IN WDFQUEUE queue, IN WDFREQUEST request, IN size_t length)
     switch (file->devType) {
     case DEVNODE_TYPE_USER:
     case DEVNODE_TYPE_CONTROL:
-    case DEVNODE_TYPE_BYPASS:
         ASSERTMSG("no BAR ptr attached to file context", file->u.bar != NULL);
         // handle request here without forwarding - read from PCIe BAR into request memory
         status = ReadBarToRequest(request, file->u.bar);
@@ -419,7 +392,6 @@ VOID EvtIoWrite(IN WDFQUEUE queue, IN WDFREQUEST request, IN size_t length)
     switch (file->devType) {
     case DEVNODE_TYPE_USER:
     case DEVNODE_TYPE_CONTROL:
-    case DEVNODE_TYPE_BYPASS:
         ASSERTMSG("no BAR ptr attached to file context", file->u.bar != NULL);
         // handle request here without forwarding. write to PCIe BAR from request memory
         status = WriteBarFromRequest(request, file->u.bar);
@@ -445,30 +417,6 @@ VOID EvtIoWrite(IN WDFQUEUE queue, IN WDFREQUEST request, IN size_t length)
     }
 
     return; // request has been either completed directly or forwarded to a queue
-}
-
-static NTSTATUS IoctlGetPerf(IN WDFREQUEST request, IN XDMA_ENGINE* engine) {
-
-    ASSERT(engine != NULL);
-    XDMA_PERF_DATA perfData = { 0 };
-    EngineGetPerf(engine, &perfData);
-
-    // get handle to the IO request memory which will hold the read data
-    WDFMEMORY requestMemory;
-    NTSTATUS status = WdfRequestRetrieveOutputMemory(request, &requestMemory);
-    if (!NT_SUCCESS(status)) {
-        TraceError(DBG_IO, "WdfRequestRetrieveOutputMemory failed: %!STATUS!", status);
-        return status;
-    }
-
-    // copy from perfData into request memory
-    status = WdfMemoryCopyFromBuffer(requestMemory, 0, &perfData, sizeof(perfData));
-    if (!NT_SUCCESS(status)) {
-        TraceError(DBG_IO, "WdfMemoryCopyFromBuffer failed: %!STATUS!", status);
-        return status;
-    }
-
-    return status;
 }
 
 static NTSTATUS IoctlGetAddrMode(IN WDFREQUEST request, IN XDMA_ENGINE* engine) {
@@ -602,82 +550,6 @@ static NTSTATUS IoctlMapBar(IN PFILE_CONTEXT file, IN WDFREQUEST request, IN ULO
 
 }
 
-static NTSTATUS IoctlKeyholeWriteRegister(IN PFILE_CONTEXT file, IN WDFREQUEST request, IN ULONG barIndex, IN PXDMA_DEVICE xdma) {
-	
-	NTSTATUS status = STATUS_INTERNAL_ERROR;
-
-	PXDMA_KEYHOLE_DATA kholeData;
-	PVOID buffer;
-	size_t totalLength;
-
-	status = WdfRequestRetrieveInputBuffer(request, sizeof(PXDMA_KEYHOLE_DATA), &buffer, &totalLength);
-	if (!NT_SUCCESS(status)) {
-		TraceError(DBG_IO, "Retrieve Buffer Failed - Length: %Iu", totalLength);
-		return status;
-	}
-		
-	if (buffer == NULL) {
-		TraceError(DBG_IO, "Buffer is NULL");
-		status = STATUS_NOT_SUPPORTED;
-		return status;
-	}
-
-	if (totalLength != sizeof(XDMA_KEYHOLE_DATA)) {
-		TraceError(DBG_IO, "Input data not equal to XDMA Keyhole Struct");
-		status = STATUS_NOT_SUPPORTED;
-		return status;
-	}
-	
-	//Cast to data struct for user application data retrieval
-	kholeData = (PXDMA_KEYHOLE_DATA)buffer;
-		
-	if (kholeData->size <= 0 || kholeData->offset >=  xdma->barLength[barIndex]) {
-		TraceError(DBG_IO, "Struct data incorrect, size is zero, pointer is null, or offset is greater than bar length");
-		status = STATUS_NOT_SUPPORTED;
-		return status;
-	}
-
-	TraceInfo(DBG_IO, "Retrieve Buffer Success - Length: %Iu", kholeData->size);
-	TraceInfo(DBG_IO, "Retrieve Buffer Success - Offset: %Iu", kholeData->offset);
-	TraceInfo(DBG_IO, "Retrieve Buffer Success - Buffer Address: %p", kholeData->ptrAddr);
-
-	PUCHAR writeAddr = (PUCHAR)file->u.bar + kholeData->offset;
-	
-	//Repeatedly writh 32-bit values from arrray to address without increment
-	for(size_t totalSize = kholeData->size; totalSize > 0; totalSize--) {
-		WRITE_REGISTER_ULONG((volatile ULONG*)writeAddr, *kholeData->ptrAddr);
-		kholeData->ptrAddr++;
-	}
-
-	if (NT_SUCCESS(status)) {
-		WdfRequestComplete(request, status);  // complete the request       
-	}
-		
-	return status;
-
-}
-
-static NTSTATUS IoctlBar(IN PFILE_CONTEXT file, IN WDFREQUEST request,
-                         IN ULONG IoControlCode, IN ULONG barIndex,
-                         IN PXDMA_DEVICE xdma)
-{
-	NTSTATUS status = STATUS_INTERNAL_ERROR;
-	
-	switch (IoControlCode) {
-		//Repeatedly write from an array size amount of times to a given register
-	case IOCTL_WRITE_KEYHOLE_REGISTER:
-		TraceInfo(DBG_IO, "IOCTL_WRITE_KEYHOLE_REGISTER");
-		status = IoctlKeyholeWriteRegister(file, request, barIndex, xdma);
-		break;
-	default:
-		TraceError(DBG_IO, "Unknown IOCTL code for device node!");
-		status = STATUS_NOT_SUPPORTED;
-		break;
-	}
-	
-	return status;
-}
-
 static NTSTATUS IoctlChannel(IN PFILE_CONTEXT file, IN WDFREQUEST request, IN ULONG IoControlCode) {
 
 	UNREFERENCED_PARAMETER(file);
@@ -688,21 +560,6 @@ static NTSTATUS IoctlChannel(IN PFILE_CONTEXT file, IN WDFREQUEST request, IN UL
 
 	// ioctl codes defined in xdma_public.h
 	switch (IoControlCode) {
-	case IOCTL_XDMA_PERF_START:
-		TraceInfo(DBG_IO, "%s_%u IOCTL_XDMA_PERF_START",
-			queue->engine->dir == H2C ? "H2C" : "C2H", queue->engine->channel);
-		EngineStartPerf(queue->engine);
-		status = STATUS_SUCCESS;
-		WdfRequestComplete(request, status);
-		break;
-	case IOCTL_XDMA_PERF_GET:
-		TraceInfo(DBG_IO, "%s_%u IOCTL_XDMA_PERF_GET",
-			queue->engine->dir == H2C ? "H2C" : "C2H", queue->engine->channel);
-		status = IoctlGetPerf(request, queue->engine);
-		if (NT_SUCCESS(status)) {
-			WdfRequestCompleteWithInformation(request, status, sizeof(XDMA_PERF_DATA));
-		}
-		break;
 	case IOCTL_XDMA_ADDRMODE_GET:
 		TraceInfo(DBG_IO, "%s_%u IOCTL_XDMA_ADDRMODE_GET",
 			queue->engine->dir == H2C ? "H2C" : "C2H", queue->engine->channel);
@@ -742,14 +599,12 @@ VOID EvtDeviceIoInCallerContext(IN WDFDEVICE  device, IN WDFREQUEST request)
         params.Parameters.DeviceIoControl.IoControlCode == IOCTL_MAP_BAR) {
         DeviceContext* ctx = GetDeviceContext(device);
         PXDMA_DEVICE xdma = &(ctx->xdma);
-        /* User, Control, Bypass set as either 0, 1, 2 or
+        /* User, Control set as either 0, 1 or
          * -1 for any BAR which does not exist excluding Control which is always there (driver error if not)
          */
         int barIndex = xdma->userBarIdx;
 
         switch (file->devType) {
-        case DEVNODE_TYPE_BYPASS:
-            barIndex++;
         case DEVNODE_TYPE_CONTROL:
             barIndex++;
         case DEVNODE_TYPE_USER:
@@ -782,21 +637,7 @@ VOID EvtIoDeviceControl(IN WDFQUEUE Queue, IN WDFREQUEST request, IN size_t Outp
 
     PFILE_CONTEXT file = GetFileContext(WdfRequestGetFileObject(request));
 
-	WDFDEVICE device = WdfFileObjectGetDevice(WdfRequestGetFileObject(request));
-	DeviceContext* ctx = GetDeviceContext(device);
-	PXDMA_DEVICE xdma = &(ctx->xdma);
-
-	//User, Control, Bypass set as either 0, 1, 2 or -1 for any BAR which does not exist excluding Control which is always there (driver error if not)
-	int barIndex = xdma->userBarIdx;
-	
 	switch (file->devType) {
-	case DEVNODE_TYPE_BYPASS:
-		barIndex++;
-	case DEVNODE_TYPE_CONTROL:
-		barIndex++;
-	case DEVNODE_TYPE_USER:	
-		status = IoctlBar(file, request, IoControlCode, barIndex, xdma);
-		break;
 	case DEVNODE_TYPE_H2C:
 	case DEVNODE_TYPE_C2H:
 		status = IoctlChannel(file, request, IoControlCode);
@@ -885,31 +726,6 @@ ErrExit:
     WdfDmaTransactionRelease(queue->engine->dmaTransaction);
     WdfRequestComplete(Request, status);
     TraceError(DBG_IO, "Error Request 0x%p: %!STATUS!", Request, status);
-}
-
-VOID EvtIoReadEngineRing(IN WDFQUEUE wdfQueue, IN WDFREQUEST Request, IN size_t length) {
-    NTSTATUS status = STATUS_UNSUCCESSFUL;
-    PQUEUE_CONTEXT queue = GetQueueContext(wdfQueue);
-    XDMA_ENGINE* engine = queue->engine;
-
-    // get output buffer
-    WDFMEMORY outputMem;
-    status = WdfRequestRetrieveOutputMemory(Request, &outputMem);
-    if (!NT_SUCCESS(status)) {
-        TraceError(DBG_IO, "WdfRequestRetrieveOutputMemory failed: %!STATUS!", status);
-        WdfRequestCompleteWithInformation(Request, status, 0);
-        return;
-    }
-
-    TraceInfo(DBG_IO, "%s_%u requesting %llu bytes from ring buffer",
-              DirectionToString(engine->dir), engine->channel, length);
-
-    LARGE_INTEGER timeout;
-    timeout.QuadPart = -10 * 10000000; // 10 seconds timeout
-    size_t numBytes = 0;
-    status = EngineRingCopyBytesToMemory(engine, outputMem, length, timeout, &numBytes);
-
-    WdfRequestCompleteWithInformation(Request, status, numBytes);
 }
 
 VOID EvtCancelReadUserEvent(IN WDFREQUEST request) {

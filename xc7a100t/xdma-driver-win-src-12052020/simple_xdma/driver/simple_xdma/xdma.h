@@ -140,11 +140,3 @@ NTSTATUS XDMA_UserIsrDisable(PXDMA_DEVICE xdma, ULONG eventId);
  * \return TRUE on success, else FALSE
  */
 EVT_WDF_PROGRAM_DMA XDMA_EngineProgramDma;
-
-/**
- * \brief Select between polling and interrupts as a mechanism for determining dma transfer 
- *        completion on a per DMA engine basis.
- * \param engine        [IN]        The DMA engine context
- * \param pollMode      [IN]        true = use polling, false = use interrupts
- */
-void XDMA_EngineSetPollMode(XDMA_ENGINE* engine, BOOLEAN pollMode);

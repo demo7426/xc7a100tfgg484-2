@@ -101,7 +101,6 @@
 #define XDMA_CTRL_IE_WRITE_ERROR            (0x1f << 14)
 #define XDMA_CTRL_IE_DESCRIPTOR_ERROR       (0x1f << 19)
 #define XDMA_CTRL_NON_INCR_ADDR             (BIT_N(25))
-#define XDMA_CTRL_POLL_MODE                 (BIT_N(26))
 #define XDMA_CTRL_RST                       (BIT_N(31))
 
 #define XDMA_CTRL_IE_ALL (XDMA_CTRL_IE_DESC_STOPPED | XDMA_CTRL_IE_DESC_COMPLETED \
@@ -129,14 +128,6 @@
 // bits of the SGDMA descriptor control field
 #define XDMA_DESC_STOP_BIT                  (BIT_N(0))
 #define XDMA_DESC_COMPLETED_BIT             (BIT_N(1))
-#define XDMA_DESC_EOP_BIT                   (BIT_N(4))
-
-#define XDMA_RESULT_EOP_BIT                 (BIT_N(0))
-
-// Engine performance control register bits
-#define XDMA_PERF_RUN                       BIT_N(0)
-#define XDMA_PERF_CLEAR                     BIT_N(1)
-#define XDMA_PERF_AUTO                      BIT_N(2)
 
 #pragma pack(1)
 

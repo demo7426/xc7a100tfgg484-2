@@ -530,7 +530,7 @@ VOID EvtChannelInterruptDpc(IN WDFINTERRUPT interrupt, IN WDFOBJECT device)
     UNREFERENCED_PARAMETER(device);
     PIRQ_CONTEXT irq = GetIrqContext(interrupt);
 
-    // do engine specific work (either EngineProcessTransfer (MM) or EngineProcessRing (ST))
+    // do engine specific work (EngineProcessTransfer for MM engines)
     irq->engine->work(irq->engine);
 }
 

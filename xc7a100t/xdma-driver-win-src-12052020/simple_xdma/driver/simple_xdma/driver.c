@@ -96,36 +96,6 @@ static NTSTATUS EngineCreateQueue(WDFDEVICE device, XDMA_ENGINE* engine, WDFQUEU
 
 const char * const dateTimeStr = "Built " __DATE__ ", " __TIME__ ".";
 
-// Get the driver parameter for POLL_MODE from the Windows registry 
-static NTSTATUS GetPollModeParameter(IN PULONG pollMode) {
-    WDFDRIVER driver = WdfGetDriver();
-    WDFKEY key;
-    NTSTATUS status = WdfDriverOpenParametersRegistryKey(driver, STANDARD_RIGHTS_ALL,
-                                                         WDF_NO_OBJECT_ATTRIBUTES, &key);
-    ULONG tracepollmode;
-    
-    if (!NT_SUCCESS(status)) {
-        TraceError(DBG_INIT, "WdfDriverOpenParametersRegistryKey failed: %!STATUS!", status);
-        WdfRegistryClose(key);
-        return status;
-    }
-
-    DECLARE_CONST_UNICODE_STRING(valueName, L"POLL_MODE");
-
-    status = WdfRegistryQueryULong(key, &valueName, pollMode);
-    if (!NT_SUCCESS(status)) {
-        TraceError(DBG_INIT, "WdfRegistryQueryULong failed: %!STATUS!", status);
-        WdfRegistryClose(key);
-        return status;
-    }
-
-    tracepollmode = *pollMode;
-    TraceVerbose(DBG_INIT, "pollMode=%u", tracepollmode);
-
-    WdfRegistryClose(key);
-    return status;
-}
-
 // main entry point - Called when driver is installed
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT driverObject, IN PUNICODE_STRING registryPath) {
     NTSTATUS			status = STATUS_SUCCESS;
@@ -283,20 +253,6 @@ NTSTATUS EvtDevicePrepareHardware(IN WDFDEVICE device, IN WDFCMRESLIST Resources
         return status;
     }
 
-    // get poll mode parameter and configure engines as poll mode if needed
-    ULONG pollMode = 0;
-    status = GetPollModeParameter(&pollMode);
-    if (!NT_SUCCESS(status)) {
-        TraceError(DBG_INIT, "GetPollModeParameter failed: %!STATUS!", status);
-        return status;
-    }
-    for (UINT dir = H2C; dir < 2; dir++) { // 0=H2C, 1=C2H
-        for (ULONG ch = 0; ch < XDMA_MAX_NUM_CHANNELS; ch++) {
-            XDMA_ENGINE* engine = &(xdma->engines[ch][dir]);
-            XDMA_EngineSetPollMode(engine, (BOOLEAN)pollMode);
-        }
-    }
-
     // create a queue for each engine
     for (UINT dir = H2C; dir < 2; dir++) { // 0=H2C, 1=C2H
         for (ULONG ch = 0; ch < XDMA_MAX_NUM_CHANNELS; ch++) {
@@ -354,14 +310,8 @@ NTSTATUS EngineCreateQueue(WDFDEVICE device, XDMA_ENGINE* engine, WDFQUEUE* queu
         config.EvtIoWrite = EvtIoWriteDma;
         TraceInfo(DBG_INIT, "EvtIoWrite=EvtIoWriteDma");
     } else if (engine->dir == C2H) { // callback handler for read requests
-
-        if (engine->type == EngineType_ST) {
-            config.EvtIoRead = EvtIoReadEngineRing;
-            TraceInfo(DBG_INIT, "EvtIoRead=EvtIoReadEngineRing");
-        } else {
-            config.EvtIoRead = EvtIoReadDma;
-            TraceInfo(DBG_INIT, "EvtIoRead=EvtIoReadDma");
-        }
+        config.EvtIoRead = EvtIoReadDma;
+        TraceInfo(DBG_INIT, "EvtIoRead=EvtIoReadDma");
     }
 
     // serialize all callbacks related to this queue. see ref [2]

@@ -117,7 +117,6 @@ static void DeviceDefaultInitialize(IN PXDMA_DEVICE xdma) {
     }
     xdma->configBarIdx = 0;
     xdma->userBarIdx = -1;
-    xdma->bypassBarIdx = -1;
 
     // registers 
     xdma->configRegs = NULL;
@@ -128,7 +127,6 @@ static void DeviceDefaultInitialize(IN PXDMA_DEVICE xdma) {
     for (UINT dir = H2C; dir < 2; dir++) { // 0=H2C, 1=C2H
         for (ULONG ch = 0; ch < XDMA_MAX_NUM_CHANNELS; ch++) {
             xdma->engines[ch][dir].enabled = FALSE;
-            xdma->engines[ch][dir].poll = FALSE;
         }
     }
 
@@ -247,7 +245,7 @@ static NTSTATUS MapBARs(IN PXDMA_DEVICE xdma, IN WDFCMRESLIST ResourcesTranslate
             TraceInfo(DBG_INIT, "%s, CmResourceTypeMemory: numBars = %u", __func__, xdma->numBars);
         }
         break;
-        case CmResourceTypeMemoryLarge: //resource->u.Memory.Length 长度 >4GB 才触发
+        case CmResourceTypeMemoryLarge: //resource->u.Memory.Length ???? >4GB ?????
             break;
         default:
             break;
@@ -255,18 +253,6 @@ static NTSTATUS MapBARs(IN PXDMA_DEVICE xdma, IN WDFCMRESLIST ResourcesTranslate
 
     }
     return STATUS_SUCCESS;
-}
-
-// Is the BAR at index 'idx' the config BAR?
-static BOOLEAN IsConfigBAR(IN PXDMA_DEVICE xdma, IN UINT idx) {
-
-    XDMA_IRQ_REGS* irqRegs = (XDMA_IRQ_REGS*)((PUCHAR)xdma->bar[idx] + IRQ_BLOCK_OFFSET);
-    XDMA_CONFIG_REGS* cfgRegs = (XDMA_CONFIG_REGS*)((PUCHAR)xdma->bar[idx] + CONFIG_BLOCK_OFFSET);
-
-    UINT32 interruptID = irqRegs->identifier & XDMA_ID_MASK;
-    UINT32 configID = cfgRegs->identifier & XDMA_ID_MASK;
-
-    return ((interruptID == XDMA_ID) && (configID == XDMA_ID)) ? TRUE : FALSE;
 }
 
 // Get the config, interrupt and sgdma module register offsets
@@ -306,7 +292,6 @@ NTSTATUS XDMA_DeviceOpen(WDFDEVICE wdfDevice,
 
     xdma->configBarIdx = 1;
     xdma->userBarIdx = -1;
-    xdma->bypassBarIdx = -1;
 
     // get the module offsets in config BAR
     GetRegisterModules(xdma);
@@ -351,7 +336,16 @@ void XDMA_DeviceClose(PXDMA_DEVICE xdma) {
         xdma->interruptRegs->channelVector[1] = 0;
     }
 
-    closeEngines(xdma);
+    // stop all enabled engines and cancel any pending watchdog timers
+    for (UINT dir = H2C; dir < 2; dir++) { // 0=H2C, 1=C2H
+        for (ULONG ch = 0; ch < XDMA_MAX_NUM_CHANNELS; ch++) {
+            XDMA_ENGINE* engine = &xdma->engines[ch][dir];
+            if (engine->enabled) {
+                KeCancelTimer(&engine->watchdogTimer);
+                EngineStop(engine);
+            }
+        }
+    }
 
     // Unmap any I/O ports. Disconnecting from the interrupt will be done automatically by the framework.
     for (UINT i = 0; i < xdma->numBars; i++) {

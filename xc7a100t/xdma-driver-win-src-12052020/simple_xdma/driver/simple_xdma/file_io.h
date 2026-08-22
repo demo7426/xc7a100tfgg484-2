@@ -71,7 +71,6 @@ typedef enum {
     DEVNODE_TYPE_USER,
     DEVNODE_TYPE_CONTROL,
     DEVNODE_TYPE_EVENTS,
-    DEVNODE_TYPE_BYPASS,
     DEVNODE_TYPE_H2C,
     DEVNODE_TYPE_C2H,
     ID_DEVNODE_UNKNOWN = 255,
@@ -81,7 +80,7 @@ typedef enum {
 typedef struct _FILE_CONTEXT {
     DEVNODE_TYPE devType;
     union {
-        void* bar;              // USER / CONTROL / BYPASS
+        void* bar;              // USER / CONTROL
         XDMA_EVENT* event;      // EVENTS
         XDMA_ENGINE* engine;    // H2C / C2H
     } u;
@@ -107,7 +106,6 @@ EVT_WDF_IO_QUEUE_IO_WRITE			EvtIoWrite;
 
 EVT_WDF_IO_QUEUE_IO_READ    EvtIoReadDma;
 EVT_WDF_IO_QUEUE_IO_WRITE   EvtIoWriteDma;
-EVT_WDF_IO_QUEUE_IO_READ    EvtIoReadEngineRing;
 
 NTSTATUS EvtReadUserEvent(WDFREQUEST request, size_t length);
 VOID HandleUserEvent(ULONG eventId, void* userData);
