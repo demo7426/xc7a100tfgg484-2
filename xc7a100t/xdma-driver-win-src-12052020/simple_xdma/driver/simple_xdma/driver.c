@@ -272,15 +272,9 @@ NTSTATUS EvtDevicePrepareHardware(IN WDFDEVICE device, IN WDFCMRESLIST Resources
     DeviceContext* ctx = GetDeviceContext(device);
     PXDMA_DEVICE xdma = &(ctx->xdma);
 
-#ifdef _QIANRUI
     ULONG userMax = 1;
     ULONG h2cChannelMax = 2;
     ULONG c2hChannelMax = 2;
-#else
-    ULONG userMax = 0;
-    ULONG h2cChannelMax = 0;
-    ULONG c2hChannelMax = 0;
-#endif
 
     NTSTATUS status = XDMA_DeviceOpen(device, xdma, &userMax, &h2cChannelMax, &c2hChannelMax,
                                       Resources, ResourcesTranslated);

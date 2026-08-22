@@ -105,13 +105,6 @@ typedef enum XDMA_IP_VERSION_T {
 
 // ====================== static functions ========================================================
 
-// Get the XDMA IP core version
-static XDMA_IP_VERSION GetVersion(IN OUT PXDMA_DEVICE xdma) {
-    XDMA_IP_VERSION version = xdma->configRegs->identifier & 0x000000ffUL;
-    TraceVerbose(DBG_INIT, "version is 0x%x", version);
-    return version;
-}
-
 // Initialize the XDMA_DEVICE structure with default values
 static void DeviceDefaultInitialize(IN PXDMA_DEVICE xdma) {
     ASSERT(xdma != NULL);
@@ -180,15 +173,24 @@ static NTSTATUS GetRealBarIndices(IN WDFDEVICE wdfDevice,
         }
         BOOLEAN is64bit = (((barVal >> 1) & 0x3) == 0x2); // bits[2:1]==10
         BOOLEAN prefetchable = (barVal & 0x8) ? TRUE : FALSE;
+
         realBarIndices[(*numRealBars)++] = i;
 
-        TraceInfo(DBG_INIT, "%s, bar[%u] raw=0x%x, addr=0x%x, %s-bit%s",
-            __func__, i, barVal, barVal & 0xFFFFFFF0,
-            is64bit ? "64" : "32",
-            prefetchable ? ", prefetchable" : ", non-prefetchable");
+        if (is64bit && i + 1 < PCI_TYPE0_ADDRESSES) {
+            ULONGLONG barRaw = (ULONGLONG)barVal | ((ULONGLONG)pciHeader.u.type0.BaseAddresses[i + 1] << 32);
 
-        if (is64bit) {
+            TraceInfo(DBG_INIT, "%s, bar[%u] raw=0x%llx, addr=0x%llx, 64-bit%s",
+                __func__, i, barRaw, barRaw & 0xFFFFFFFFFFFFFFF0,
+                prefetchable ? ", prefetchable" : ", non-prefetchable");
+
             i++;                               // 高 32 位占用下一槽
+        }
+        else
+        {
+            TraceInfo(DBG_INIT, "%s, bar[%u] raw=0x%x, addr=0x%x, 32-bit%s",
+                __func__, i, barVal, barVal & 0xFFFFFFF0,
+                prefetchable ? ", prefetchable" : ", non-prefetchable");
+
         }
     }
     return STATUS_SUCCESS;
@@ -267,46 +269,6 @@ static BOOLEAN IsConfigBAR(IN PXDMA_DEVICE xdma, IN UINT idx) {
     return ((interruptID == XDMA_ID) && (configID == XDMA_ID)) ? TRUE : FALSE;
 }
 
-// Identify which BAR is the config BAR
-static UINT FindConfigBAR(IN PXDMA_DEVICE xdma) {
-    for (UINT i = 0; i < xdma->numBars; ++i) {
-        if (IsConfigBAR(xdma, i)) {
-            TraceInfo(DBG_INIT, "config BAR is %u", i);
-            return i;
-        }
-    }
-    return xdma->numBars; //not found - return past-the-end index
-}
-
-// Identify all BARs
-static NTSTATUS IdentifyBars(IN PXDMA_DEVICE xdma) {
-#ifdef _QIANRUI
-    xdma->configBarIdx = 1;
-    xdma->userBarIdx = -1;
-    xdma->bypassBarIdx = -1;
-
-    return STATUS_SUCCESS;
-#else
-    // find DMA config BAR (usually BAR1, see section 'Target Bridge' in [1]) 
-    xdma->configBarIdx = FindConfigBAR(xdma);
-    if (xdma->configBarIdx == xdma->numBars) {
-        TraceError(DBG_INIT, "findConfigBar() failed: bar is %d", xdma->configBarIdx);
-        return STATUS_DRIVER_INTERNAL_ERROR;
-    }
-    // if config bar is bar0 then user bar doesnt exit
-    xdma->userBarIdx = xdma->configBarIdx == 1 ? 0 : -1;
-
-    // if config bar is not the last bar then bypass bar exists
-    xdma->bypassBarIdx = xdma->numBars - xdma->configBarIdx == 2 ? xdma->numBars - 1 : -1;
-
-    TraceInfo(DBG_INIT, "%!FUNC!, BAR index: user=%d, control=%d, bypass=%d",
-        xdma->userBarIdx, xdma->configBarIdx, xdma->bypassBarIdx);
-    return STATUS_SUCCESS;
-#endif
-
-    
-}
-
 // Get the config, interrupt and sgdma module register offsets
 static void GetRegisterModules(IN PXDMA_DEVICE xdma) {
     PUCHAR configBarAddr = (PUCHAR)xdma->bar[xdma->configBarIdx];
@@ -342,22 +304,12 @@ NTSTATUS XDMA_DeviceOpen(WDFDEVICE wdfDevice,
         return status;
     }
 
-    // identify BAR configuration - user(optional), config, bypass(optional)
-    status = IdentifyBars(xdma);
-    if (!NT_SUCCESS(status)) {
-        TraceError(DBG_INIT, "IdentifyBars() failed! %!STATUS!", status);
-        return status;
-    }
+    xdma->configBarIdx = 1;
+    xdma->userBarIdx = -1;
+    xdma->bypassBarIdx = -1;
 
     // get the module offsets in config BAR
     GetRegisterModules(xdma);
-
-    // Confirm XDMA IP core version matches this driver
-    UINT version = GetVersion(xdma);
-    if (version != v2017_1) {
-        TraceWarning(DBG_INIT, "Version mismatch! Expected 2017.1 (0x%x) but got (0x%x)",
-                     v2017_1, version);
-    }
 
     status = SetupInterrupts(xdma, userMax, h2cChannelMax, c2hChannelMax, ResourcesRaw, ResourcesTranslated);
     if (!NT_SUCCESS(status)) {
