@@ -1,152 +1,52 @@
 /*************************************************
 Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
-ÎÄ¼şÃû:	hzcc_xdma_test.h
-×÷  Õß:	Ç®Èñ      °æ±¾: V1.0     ĞÂ½¨ÈÕÆÚ: 2026.08.10
-Ãè  Êö: ÊµÏÖxilinx¹Ù·½µÄxdma ipºËµÄ¶ÁĞ´Êı¾İĞÔÄÜ²âÊÔ
-±¸  ×¢:
-ĞŞ¸Ä¼ÇÂ¼:
+æ–‡ä»¶å:	hzcc_xilinx_xdma_test.h
+ä½œ  è€…:	é’±é”      ç‰ˆæœ¬: V1.0     æ–°å»ºæ—¥æœŸ: 2026.08.23
+æ  è¿°: å®ç°xilinxå®˜æ–¹çš„xdma ipæ ¸çš„è¯»å†™æ•°æ®æ€§èƒ½æµ‹è¯•
+å¤‡  æ³¨:
+ä¿®æ”¹è®°å½•:
 
-  1.  ÈÕÆÚ: 2026.08.10
-      ×÷Õß: Ç®Èñ
-      ÄÚÈİ:
-          1) ´ËÎªÄ£°åµÚÒ»¸ö°æ±¾£»
-      °æ±¾:V1.0
+  1.  æ—¥æœŸ: 2026.08.23
+      ä½œè€…: é’±é”
+      å†…å®¹:
+          1) æ­¤ä¸ºæ¨¡æ¿ç¬¬ä¸€ä¸ªç‰ˆæœ¬ï¼›
+      ç‰ˆæœ¬:V1.0
 
 *************************************************/
+
 
 #include <Windows.h>
 #include <SetupAPI.h>
 
-#include "Debug.h"
-
-#include "hzcc_xdma_test.h"
+#include "hzcc_xilinx_xdma_test.h"
+#include "debug.h"
 
 namespace hzcc
 {
-    #define MAX_BUF_SIZE (8 * 1024 * 1024)      //µ¥´Î²»ÄÜ³¬¹ı 8MB£¬³¬³öÇı¶¯×Ô¶¯·ÖÆ¬
-    #define ALIGNED_SIZE 256                    //ÄÚ´æ¶ÔÆä´óĞ¡
+    #define MAX_BUF_SIZE (8 * 1024 * 1024)      //å•æ¬¡ä¸èƒ½è¶…è¿‡ 8MBï¼Œè¶…å‡ºé©±åŠ¨è‡ªåŠ¨åˆ†ç‰‡
+    #define ALIGNED_SIZE 256                    //å†…å­˜å¯¹å…¶å¤§å°
 
     // 74c7e4a9-6d5d-4a70-bc0d-20691dff9e9d
     DEFINE_GUID(GUID_DEVINTERFACE_XDMA,
         0x74c7e4a9, 0x6d5d, 0x4a70, 0xbc, 0x0d, 0x20, 0x69, 0x1d, 0xff, 0x9e, 0x9d);
 
-    CXDMA_Test_Base::~CXDMA_Test_Base()
+    int CXilinx_XDMA_Test::Init()
     {
+        auto unDevNum = this->FindDevice(GUID_DEVINTERFACE_XDMA);
 
-    }
-
-
-    int CXDMA_Test_Base::StartH2C_AsyncTest()
-    {
-        return 0;
-    }
-
-    int CXDMA_Test_Base::StartC2H_AsyncTest()
-    {
-        return 0;
-    }
-
-    int CXDMA_Test_Base::StartH2C_SpeedTest(int _DevIndex)
-    {
-        return 0;
-    }
-
-    std::optional<std::vector<SPEED_INFO>> CXDMA_Test_Base::GetH2C_SpeedInfo()
-    {
-        return std::nullopt;
-    }
-
-    int CXDMA_Test_Base::StopH2C_SpeedTest()
-    {
-        return 0;
-    }
-
-    int CXDMA_Test_Base::StartC2H_SpeedTest(int _DevIndex)
-    {
-        return 0;
-    }
-
-    std::optional<std::vector<SPEED_INFO>> CXDMA_Test_Base::GetC2H_SpeedInfo()
-    {
-        return std::nullopt;
-    }
-
-    int CXDMA_Test_Base::StopC2H_SpeedTest()
-    {
-        return 0;
-    }
-
-    unsigned int CXDMA_Test_Base::FindDevice(GUID tGuid)
-    {
-        HDEVINFO hDevInfo = SetupDiGetClassDevs((LPGUID)&tGuid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE); //·µ»Ø Éè±¸ĞÅÏ¢¼¯ µÄ¾ä±ú£¬ÆäÖĞ°üº¬±¾µØ¼ÆËã»úÇëÇóµÄÉè±¸ĞÅÏ¢ÔªËØ¡£
-        if (hDevInfo == INVALID_HANDLE_VALUE)
-        {
-            DEBUG(DEBUG_LEVEL_ERROR, "SetupDiGetClassDevs is failed.");
-            return -2;
-        }
-
-        SP_DEVICE_INTERFACE_DATA tSP_DEVICE_INTERFACE_DATA = { 0 };
-        tSP_DEVICE_INTERFACE_DATA.cbSize = sizeof SP_DEVICE_INTERFACE_DATA;
-
-        DWORD dwIndex = 0;
-
-        //SetupDiEnumDeviceInterfaces º¯ÊıÃ¶¾Ù°üº¬ÔÚÉè±¸ĞÅÏ¢¼¯ÖĞµÄÉè±¸½Ó¿Ú
-        for (dwIndex = 0; SetupDiEnumDeviceInterfaces(hDevInfo, NULL, (LPGUID)&tGuid, dwIndex, &tSP_DEVICE_INTERFACE_DATA); dwIndex++)
-        {
-            DWORD dwDeviceInterfaceDetailDataSize = 0;
-
-            //»ñÈ¡µ±Ç°ÉèÖÃÏêÏ¸ĞÅÏ¢ĞèÒªµÄ´óĞ¡
-            if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &tSP_DEVICE_INTERFACE_DATA, NULL, 0, &dwDeviceInterfaceDetailDataSize, NULL) && GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-            {
-                DEBUG(DEBUG_LEVEL_ERROR, "SetupDiGetDeviceInterfaceDetail is failed.");
-                break;
-            }
-
-            //·ÖÅäÏêÏ¸ĞÅÏ¢µÄ¶ÑÄÚ´æ
-            PSP_DEVICE_INTERFACE_DETAIL_DATA ptSP_DEVICE_INTERFACE_DETAIL_DATA = (PSP_DEVICE_INTERFACE_DETAIL_DATA)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwDeviceInterfaceDetailDataSize);
-            if (ptSP_DEVICE_INTERFACE_DETAIL_DATA == NULL)
-            {
-                DEBUG(DEBUG_LEVEL_ERROR, "HeapAlloc is failed.");
-                break;
-            }
-
-            ptSP_DEVICE_INTERFACE_DETAIL_DATA->cbSize = sizeof SP_DEVICE_INTERFACE_DETAIL_DATA;
-
-            if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &tSP_DEVICE_INTERFACE_DATA, ptSP_DEVICE_INTERFACE_DETAIL_DATA, dwDeviceInterfaceDetailDataSize, NULL, NULL) == false)
-            {
-                DEBUG(DEBUG_LEVEL_ERROR, "SetupDiGetDeviceInterfaceDetail is failed.");
-
-                HeapFree(GetProcessHeap(), 0, ptSP_DEVICE_INTERFACE_DETAIL_DATA);
-                ptSP_DEVICE_INTERFACE_DETAIL_DATA = NULL;
-
-                break;
-            }
-
-            m_vecBasePath.push_back(std::wstring(ptSP_DEVICE_INTERFACE_DETAIL_DATA->DevicePath));
-            m_vecC2H_Path.push_back(m_vecBasePath.back() + L"\\c2h_" + std::to_wstring(m_vecC2H_Path.size()));
-            m_vecH2C_Path.push_back(m_vecBasePath.back() + L"\\h2c_" + std::to_wstring(m_vecH2C_Path.size()));
-
-            HeapFree(GetProcessHeap(), 0, ptSP_DEVICE_INTERFACE_DETAIL_DATA);
-            ptSP_DEVICE_INTERFACE_DETAIL_DATA = NULL;
-        }
-
-        SetupDiDestroyDeviceInfoList(hDevInfo);
-        hDevInfo = NULL;
-
-        return dwIndex;
-    }
-
-    CXilinx_XDMA_Test::CXilinx_XDMA_Test()
-    {
-        auto dwDevNum = this->FindDevice(GUID_DEVINTERFACE_XDMA);
-
-        DEBUG(DEBUG_LEVEL_INFO, "Found %u XDma device.", dwDevNum);
+        DEBUG(DEBUG_LEVEL_INFO, "Found %u XDma device.", unDevNum);
 
         for (size_t i = 0; i < m_vecBasePath.size(); i++)
         {
             DEBUG(DEBUG_LEVEL_INFO, "i = %llu, DevicePath = %ws.", i, m_vecBasePath[i].c_str());
         }
 
+        return unDevNum;
+    }
+
+    int CXilinx_XDMA_Test::Exit()
+    {
+        return 0;
     }
 
 
@@ -165,7 +65,7 @@ namespace hzcc
 
         for (size_t i = 0; i < m_vecH2C_Path.size(); i++)
         {
-            //²âÊÔÃ¿Ò»¸öxdmaÉè±¸
+            //æµ‹è¯•æ¯ä¸€ä¸ªxdmaè®¾å¤‡
             hFile = CreateFile(m_vecH2C_Path[i].c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
             if (hFile == INVALID_HANDLE_VALUE)
             {
@@ -215,8 +115,8 @@ namespace hzcc
 
         for (size_t i = 0; i < m_vecC2H_Path.size(); i++)
         {
-            //²âÊÔÃ¿Ò»¸öxdmaÉè±¸
-            hFile =  CreateFile(m_vecC2H_Path[i].c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            //æµ‹è¯•æ¯ä¸€ä¸ªxdmaè®¾å¤‡
+            hFile = CreateFile(m_vecC2H_Path[i].c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
             if (hFile == INVALID_HANDLE_VALUE)
             {
                 DEBUG(DEBUG_LEVEL_ERROR, "CreateFile is failed, c2h_path = %ws.", m_vecC2H_Path[i].c_str());
@@ -264,14 +164,14 @@ namespace hzcc
 
         for (size_t i = 0; i < m_vecC2H_Path.size(); i++)
         {
-            //²âÊÔÃ¿Ò»¸öxdmaÉè±¸
+            //æµ‹è¯•æ¯ä¸€ä¸ªxdmaè®¾å¤‡
             hFile = CreateFile(
-                m_vecC2H_Path[i].c_str(), 
-                GENERIC_READ | GENERIC_WRITE, 
-                0, 
-                NULL, 
-                OPEN_EXISTING, 
-                FILE_FLAG_OVERLAPPED, //¿ªÆôÖØµşIO
+                m_vecC2H_Path[i].c_str(),
+                GENERIC_READ | GENERIC_WRITE,
+                0,
+                NULL,
+                OPEN_EXISTING,
+                FILE_FLAG_OVERLAPPED, //å¼€å¯é‡å IO
                 NULL
             );
             if (hFile == INVALID_HANDLE_VALUE)
@@ -295,7 +195,7 @@ namespace hzcc
                     break;
                 }
 
-                SleepEx(INFINITE, TRUE);    //Ö÷¶¯½øÈë¿É¸æ¾¯µÈ´ı£¬¸ø²Ù×÷ÏµÍ³»ú»áÔËĞĞÄãµÄ IO Íê³Éº¯Êı
+                SleepEx(INFINITE, TRUE);    //ä¸»åŠ¨è¿›å…¥å¯å‘Šè­¦ç­‰å¾…ï¼Œç»™æ“ä½œç³»ç»Ÿæœºä¼šè¿è¡Œä½ çš„ IO å®Œæˆå‡½æ•°
             }
 
             CloseHandle(hFile);
@@ -322,7 +222,7 @@ namespace hzcc
             DEBUG(DEBUG_LEVEL_ERROR, "_aligned_malloc is failed.");
             return -2;
         }
-        
+
         PCHAR pchWriteBuf = (PCHAR)_aligned_malloc(MAX_BUF_SIZE, ALIGNED_SIZE);
         if (!pchWriteBuf)
         {
@@ -340,7 +240,7 @@ namespace hzcc
 
         for (size_t i = 0; i < m_vecC2H_Path.size(); i++)
         {
-            //²âÊÔÃ¿Ò»¸öxdmaÉè±¸
+            //æµ‹è¯•æ¯ä¸€ä¸ªxdmaè®¾å¤‡
             hC2H_File = CreateFile(m_vecC2H_Path[i].c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
             if (hC2H_File == INVALID_HANDLE_VALUE)
             {
@@ -369,7 +269,7 @@ namespace hzcc
                     DEBUG(DEBUG_LEVEL_ERROR, "ReadFile is failed, len = %u, dwNumberOfBytesRead = %u.", len, dwNumberOfBytesRead);
                 }
 
-                //ÄÚ´æ±È½Ï
+                //å†…å­˜æ¯”è¾ƒ
                 if (memcmp(pchWriteBuf, pchReadBuf, len))
                     DEBUG(DEBUG_LEVEL_INFO, "Memory data inconsistency, len = %u.", len);
                 else
@@ -389,7 +289,7 @@ namespace hzcc
             _aligned_free(pchWriteBuf);
             pchWriteBuf = NULL;
         }
-        
+
         if (pchReadBuf)
         {
             _aligned_free(pchReadBuf);
@@ -412,22 +312,22 @@ namespace hzcc
             }
 
             DWORD lpNumberOfBytesWritten = 0;
-            UINT64 lWriteSum = 0;       //Ğ´ÈëÊı¾İµÄ×Ü³¤¶È;µ¥Î»:Byte
-            constexpr static DWORD len = 8 * 1024 * 1024;
+            UINT64 lWriteSum = 0;       //å†™å…¥æ•°æ®çš„æ€»é•¿åº¦;å•ä½:Byte
+            constexpr static DWORD len = MAX_BUF_SIZE;
 
             auto start_clock = std::chrono::steady_clock::now();
             auto end_clock = start_clock;
-            auto ini_clock = start_clock;           //³õÊ¼Ê±¿Ì
-            UINT64 totalBytes = 0;                  //×ÜÊı¾İÁ¿;µ¥Î»:Byte
+            auto ini_clock = start_clock;           //åˆå§‹æ—¶åˆ»
+            UINT64 totalBytes = 0;                  //æ€»æ•°æ®é‡;å•ä½:Byte
 
-            //²âÊÔÃ¿Ò»¸öxdmaÉè±¸
+            //æµ‹è¯•æ¯ä¸€ä¸ªxdmaè®¾å¤‡
             hFile = CreateFile(_H2C_Path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
             if (hFile == INVALID_HANDLE_VALUE)
             {
                 DEBUG(DEBUG_LEVEL_ERROR, "CreateFile is failed, h2c_path = %ws.", _H2C_Path.c_str());
                 return;
             }
-            
+
             RtlFillMemory(pchWriteBuf, MAX_BUF_SIZE, 1);
 
             start_clock = std::chrono::steady_clock::now();
@@ -457,7 +357,7 @@ namespace hzcc
 
                         tSpeedInfo.Speed = lWriteSum * 1.0 / 1000 / 1000 / (ns * 1.0 / 1000'000'000);
                         tSpeedInfo.Time = std::chrono::duration_cast<std::chrono::milliseconds>(end_clock - ini_clock).count();
-                        tSpeedInfo.AverageSpeed = (totalBytes * 1.0 / 1000 / 1000) / 
+                        tSpeedInfo.AverageSpeed = (totalBytes * 1.0 / 1000 / 1000) /
                             (std::chrono::duration_cast<std::chrono::nanoseconds>(end_clock - ini_clock).count() / 1000'000'000);
 
                         std::unique_lock<std::mutex> lock(m_mutH2CSpeed);
@@ -495,10 +395,10 @@ namespace hzcc
             return -2;
         }
 
-        //²âÊÔµ±Ç°µÄPCI/PCIeÉè±¸
+        //æµ‹è¯•å½“å‰çš„PCI/PCIeè®¾å¤‡
         m_vecH2CIsRun.push_back(true);
         m_vecThH2C.push_back(new std::thread(func, _DevIndex, m_vecH2C_Path[_DevIndex]));
-        
+
         return 0;
     }
 
@@ -526,8 +426,8 @@ namespace hzcc
             if (m_vecThH2C[i])
             {
                 m_vecH2CIsRun[i] = false;
-                
-                if(m_vecThH2C[i]->joinable())
+
+                if (m_vecThH2C[i]->joinable())
                     m_vecThH2C[i]->join();
 
                 delete m_vecThH2C[i];
@@ -535,10 +435,10 @@ namespace hzcc
             }
         }
 
-        if(!m_vecH2CIsRun.empty())
+        if (!m_vecH2CIsRun.empty())
             m_vecH2CIsRun.clear();
-        
-        if(!m_vecThH2C.empty())
+
+        if (!m_vecThH2C.empty())
             m_vecThH2C.clear();
 
         return 0;
@@ -557,15 +457,15 @@ namespace hzcc
             }
 
             DWORD lpNumberOfBytesRead = 0;
-            UINT64 lWriteSum = 0;       //Ğ´ÈëÊı¾İµÄ×Ü³¤¶È;µ¥Î»:Byte
-            constexpr static DWORD len = 8 * 1024 * 1024;
+            UINT64 lWriteSum = 0;       //å†™å…¥æ•°æ®çš„æ€»é•¿åº¦;å•ä½:Byte
+            constexpr static DWORD len = MAX_BUF_SIZE;
 
             auto start_clock = std::chrono::steady_clock::now();
             auto end_clock = start_clock;
-            auto ini_clock = start_clock;           //³õÊ¼Ê±¿Ì
-            UINT64 totalBytes = 0;                  //×ÜÊı¾İÁ¿;µ¥Î»:Byte
+            auto ini_clock = start_clock;           //åˆå§‹æ—¶åˆ»
+            UINT64 totalBytes = 0;                  //æ€»æ•°æ®é‡;å•ä½:Byte
 
-            //²âÊÔÃ¿Ò»¸öxdmaÉè±¸
+            //æµ‹è¯•æ¯ä¸€ä¸ªxdmaè®¾å¤‡
             hFile = CreateFile(_C2H_Path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
             if (hFile == INVALID_HANDLE_VALUE)
             {
@@ -638,7 +538,7 @@ namespace hzcc
             return -2;
         }
 
-        //²âÊÔµ±Ç°µÄPCI/PCIeÉè±¸
+        //æµ‹è¯•å½“å‰çš„PCI/PCIeè®¾å¤‡
         m_vecC2HIsRun.push_back(true);
         m_vecThC2H.push_back(new std::thread(func, _DevIndex, m_vecC2H_Path[_DevIndex]));
 
@@ -680,7 +580,7 @@ namespace hzcc
 
         if (!m_vecC2HIsRun.empty())
             m_vecC2HIsRun.clear();
-        
+
         if (!m_vecThC2H.empty())
             m_vecThC2H.clear();
 
@@ -704,21 +604,21 @@ namespace hzcc
 
         for (size_t i = 0; i < m_vecH2C_Path.size(); i++)
         {
-            //²âÊÔÃ¿Ò»¸öxdmaÉè±¸
+            //æµ‹è¯•æ¯ä¸€ä¸ªxdmaè®¾å¤‡
             hFile = CreateFile(
-                m_vecH2C_Path[i].c_str(), 
-                GENERIC_READ | GENERIC_WRITE, 
-                0, 
-                NULL, 
-                OPEN_EXISTING, 
-                FILE_FLAG_OVERLAPPED, //¿ªÆôÖØµşIO
+                m_vecH2C_Path[i].c_str(),
+                GENERIC_READ | GENERIC_WRITE,
+                0,
+                NULL,
+                OPEN_EXISTING,
+                FILE_FLAG_OVERLAPPED, //å¼€å¯é‡å IO
                 NULL);
             if (hFile == INVALID_HANDLE_VALUE)
             {
                 DEBUG(DEBUG_LEVEL_ERROR, "CreateFile is failed, h2c_path = %ws.", m_vecH2C_Path[i].c_str());
                 break;
             }
-            
+
             for (DWORD len = 256; len <= MAX_BUF_SIZE; len *= 2)
             {
                 ptOverlapped = static_cast<LPOVERLAPPED>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof OVERLAPPED));
@@ -734,7 +634,7 @@ namespace hzcc
                     break;
                 }
 
-                SleepEx(INFINITE, TRUE);    //Ö÷¶¯½øÈë¿É¸æ¾¯µÈ´ı£¬¸ø²Ù×÷ÏµÍ³»ú»áÔËĞĞÄãµÄ IO Íê³Éº¯Êı
+                SleepEx(INFINITE, TRUE);    //ä¸»åŠ¨è¿›å…¥å¯å‘Šè­¦ç­‰å¾…ï¼Œç»™æ“ä½œç³»ç»Ÿæœºä¼šè¿è¡Œä½ çš„ IO å®Œæˆå‡½æ•°
             }
 
             CloseHandle(hFile);
@@ -777,7 +677,6 @@ namespace hzcc
             lpOverlapped = NULL;
         }
     }
-    
+
 
 }
-

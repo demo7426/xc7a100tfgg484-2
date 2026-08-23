@@ -21,7 +21,7 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 #include <optional>
 
 #include "ui_pcie_widget.h"
-#include "hzcc_xdma_test.h"
+#include "hzcc_xdma_test_factory.h"
 
 class QCPGraph;
 
@@ -32,6 +32,16 @@ class CPCIe_Widget : public QWidget
 public:
     CPCIe_Widget(QWidget *parent = nullptr);
 	~CPCIe_Widget();
+
+    /// <summary>
+    /// 获取卡数量
+    /// </summary>
+    /// <param name=""></param>
+    /// <returns>卡数量</returns>
+    inline int GetCardNum(void)
+    {
+        return m_nCardNum;
+    }
 
 private:
 	Ui::CPCIe_WidgetClass ui;
@@ -48,16 +58,24 @@ private:
     std::optional<double> m_dbYAxis_LowerLimit = std::nullopt;              //y轴数据下限             
     std::optional<double> m_dbYAxis_UpperLimit = std::nullopt;              //y轴数据上限
 
+    int m_nCardNum = 0;         //卡数量
+
 private:
+    /// <summary>
+    /// 初始化数据
+    /// </summary>
+    /// <param name=""></param>
+    void InitData(void);
+
     /// <summary>
     /// 初始化ui界面
     /// </summary>
-    void InitUi(void) noexcept;
+    void InitUi(void);
 
     /// <summary>
     /// 初始化信号槽
     /// </summary>
-    void InitSignalSlots(void) noexcept;
+    void InitSignalSlots(void);
 
 private:
     /// <summary>

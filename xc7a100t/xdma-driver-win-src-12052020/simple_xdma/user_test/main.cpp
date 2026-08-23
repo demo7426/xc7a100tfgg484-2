@@ -1,4 +1,4 @@
-﻿/*************************************************
+/*************************************************
 Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 文件名:	main.cpp
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.10
@@ -18,8 +18,9 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 #include <thread>
 #include <chrono>
 
-#include "Debug.h"
+#include "debug.h"
 #include "hzcc_xdma_test.h"
+#include "hzcc_xdma_test_factory.h"
 
 enum class _USER_CMD_TYPE: int32_t
 {
@@ -43,7 +44,7 @@ int main(int argc, char* argv[])
 		if(argc > 1)
 			eCmd = static_cast<_USER_CMD_TYPE>(std::atoi(argv[1]));
 
-		hzcc::CXDMA_Test_Base* pcXDMA_Test = new hzcc::CXilinx_XDMA_Test;
+		hzcc::CXDMA_Test_Base* pcXDMA_Test = hzcc::CXDMA_Test_Base_Factory::GetInstance()->GetPtr(hzcc::XDMA_TYPE::XILINX);
 		DEBUG(DEBUG_LEVEL_INFO, "");
 
 		switch (eCmd)

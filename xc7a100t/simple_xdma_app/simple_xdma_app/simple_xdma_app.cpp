@@ -24,17 +24,30 @@ simple_xdma_app::simple_xdma_app(QWidget *parent)
 {
     ui.setupUi(this);
 
-    this->resize(1280, 800);
+    this->InitUi();
+}
 
+simple_xdma_app::~simple_xdma_app()
+{}
+
+void simple_xdma_app::InitUi(void)
+{
     QIcon winIcon(":/image/res/image/x.png");
     if (!winIcon.isNull())
     {
         setWindowIcon(winIcon);
     }
 
+    QLabel* labelLeft = new QLabel("", this);
 
-    setCentralWidget(new CPCIe_Widget(this));
+    auto widget = new CPCIe_Widget(this);
+    setCentralWidget(widget);
+
+    this->setWindowTitle(tr("Simple XDMA App"));
+
+    this->resize(1280, 800);
+
+    labelLeft->setText(tr("Card Num:") + QString::number(widget->GetCardNum()));
+
+    ui.statusBar->addWidget(labelLeft);
 }
-
-simple_xdma_app::~simple_xdma_app()
-{}

@@ -29,4 +29,10 @@ public:
 
 private:
     Ui::simple_xdma_appClass ui;
+
+private:
+    /// <summary>
+    /// 初始化ui界面
+    /// </summary>
+    void InitUi(void);
 };

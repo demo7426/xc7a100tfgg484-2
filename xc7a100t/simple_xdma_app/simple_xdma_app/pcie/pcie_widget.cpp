@@ -23,6 +23,7 @@ CPCIe_Widget::CPCIe_Widget(QWidget *parent)
 {
 	ui.setupUi(this);
 
+	this->InitData();
 	this->InitUi();
 	this->InitSignalSlots();
 }
@@ -33,24 +34,28 @@ CPCIe_Widget::~CPCIe_Widget()
 
 	if (m_pcXDMA_Test)
 	{
+		m_pcXDMA_Test->Exit();
+
 		delete m_pcXDMA_Test;
 		m_pcXDMA_Test = nullptr;
 	}
 }
 
-void CPCIe_Widget::InitUi(void) noexcept
+void CPCIe_Widget::InitData(void)
 {
-	QStringList strListRegSize = { tr("8 Bit"), tr("16 Bit"), tr("32 Bit") , tr("64 Bit") };
+	m_pcXDMA_Test = hzcc::CXDMA_Test_Base_Factory::GetInstance()->GetPtr(hzcc::XDMA_TYPE::XILINX);
+	if (m_pcXDMA_Test == nullptr)
+	{
+		QMessageBox::critical(this, tr("Critical dialog"), tr("Init is error."));
+		exit(0);
+	}
 
-	ui.comboBox_RegSize->addItems(strListRegSize);
-	ui.comboBox_RegSize->setCurrentText(tr("32 Bit"));
-
-	////////////////////////////////数据初始化设置////////////////////////////////
+	m_nCardNum = m_pcXDMA_Test->Init();
 
 	m_dbYAxis_LowerLimit = std::nullopt;
 	m_dbYAxis_UpperLimit = std::nullopt;
 
-	if(!m_vecCPGraph.empty())
+	if (!m_vecCPGraph.empty())
 		m_vecCPGraph.clear();
 
 	m_vecCPGraph.push_back(ui.widgetCustomPlot->addGraph());
@@ -61,6 +66,19 @@ void CPCIe_Widget::InitUi(void) noexcept
 
 	m_vecCPGraph[0]->setPen(QPen(QColor(0, 255, 0)));
 	m_vecCPGraph[1]->setPen(QPen(QColor(0, 0, 255)));
+
+	m_cTimer.setTimerType(Qt::TimerType::VeryCoarseTimer);
+	m_cTimer.setInterval(200);
+}
+
+void CPCIe_Widget::InitUi(void)
+{
+	QStringList strListRegSize = { tr("8 Bit"), tr("16 Bit"), tr("32 Bit") , tr("64 Bit") };
+
+	ui.comboBox_RegSize->addItems(strListRegSize);
+	ui.comboBox_RegSize->setCurrentText(tr("32 Bit"));
+
+	////////////////////////////////数据初始化设置////////////////////////////////
 
 	ui.widgetCustomPlot->xAxis->setLabel(tr("Time(s)"));
 	ui.widgetCustomPlot->yAxis->setLabel(tr("Speed(MB/s)"));
@@ -73,11 +91,6 @@ void CPCIe_Widget::InitUi(void) noexcept
 	
 	ui.widgetCustomPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
 
-	m_cTimer.setTimerType(Qt::TimerType::VeryCoarseTimer);
-	m_cTimer.setInterval(200);
-
-	m_pcXDMA_Test = new hzcc::CXilinx_XDMA_Test();
-
 	ui.lineEdit_H2CSpeed->setText(tr("0"));
 	ui.lineEdit_C2HSpeed->setText(tr("0"));
 
@@ -85,7 +98,7 @@ void CPCIe_Widget::InitUi(void) noexcept
 	ui.pushButton_Stop->setEnabled(false);
 }
 
-void CPCIe_Widget::InitSignalSlots(void) noexcept
+void CPCIe_Widget::InitSignalSlots(void)
 {
 	connect(&m_cTimer, &QTimer::timeout, this, &CPCIe_Widget::RefreshGraph);
 
