@@ -1,16 +1,16 @@
 /*************************************************
 Copyright (C), 2026-2040    , Level Chip Co., Ltd.
-ÎÄ¼şÃû:	pcie_widget.h
-×÷  Õß:	Ç®Èñ      °æ±¾: V1.0     ĞÂ½¨ÈÕÆÚ: 2026.08.21
-Ãè  Êö: pcieÏà¹Ø¿ØÖÆ´°¿Ú
-±¸  ×¢:	
-ĞŞ¸Ä¼ÇÂ¼:
+æ–‡ä»¶å:	pcie_widget.h
+ä½œ  è€…:	é’±é”      ç‰ˆæœ¬: V1.0     æ–°å»ºæ—¥æœŸ: 2026.08.21
+æ  è¿°: pcieç›¸å…³æ§åˆ¶çª—å£
+å¤‡  æ³¨:	
+ä¿®æ”¹è®°å½•:
 
-  1.  ÈÕÆÚ: 2026.08.21
-      ×÷Õß: Ç®Èñ
-      ÄÚÈİ:
-          1) ´ËÎªÄ£°åµÚÒ»¸ö°æ±¾£»
-      °æ±¾:V1.0
+  1.  æ—¥æœŸ: 2026.08.21
+      ä½œè€…: é’±é”
+      å†…å®¹:
+          1) æ­¤ä¸ºæ¨¡æ¿ç¬¬ä¸€ä¸ªç‰ˆæœ¬ï¼›
+      ç‰ˆæœ¬:V1.0
 
 *************************************************/
 
@@ -39,29 +39,29 @@ private:
 
     std::vector<QCPGraph*> m_vecCPGraph;
 
-    QTimer m_cTimer;        //¶¨Ê±Æ÷
+    QTimer m_cTimer;        //å®šæ—¶å™¨
 
-    static constexpr qint32 m_nMaxPointNum = 1200; //×î´óÊı¾İÁ¿
+    static constexpr qint32 m_nMaxPointNum = 1200; //æœ€å¤§æ•°æ®é‡
     
     hzcc::CXDMA_Test_Base* m_pcXDMA_Test = nullptr;
 
-    std::optional<double> m_dbYAxis_LowerLimit = std::nullopt;              //yÖáÊı¾İÏÂÏŞ             
-    std::optional<double> m_dbYAxis_UpperLimit = std::nullopt;              //yÖáÊı¾İÉÏÏŞ
+    std::optional<double> m_dbYAxis_LowerLimit = std::nullopt;              //yè½´æ•°æ®ä¸‹é™             
+    std::optional<double> m_dbYAxis_UpperLimit = std::nullopt;              //yè½´æ•°æ®ä¸Šé™
 
 private:
     /// <summary>
-    /// ³õÊ¼»¯ui½çÃæ
+    /// åˆå§‹åŒ–uiç•Œé¢
     /// </summary>
     void InitUi(void) noexcept;
 
     /// <summary>
-    /// ³õÊ¼»¯ĞÅºÅ²Û
+    /// åˆå§‹åŒ–ä¿¡å·æ§½
     /// </summary>
     void InitSignalSlots(void) noexcept;
 
 private:
     /// <summary>
-    /// Ë¢ĞÂÍ¼±íÊı¾İ
+    /// åˆ·æ–°å›¾è¡¨æ•°æ®
     /// </summary>
     /// <param name=""></param>
     void RefreshGraph(void);

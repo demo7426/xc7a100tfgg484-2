@@ -4,18 +4,18 @@
 
 int main(int argc, char *argv[])
 {
-    // ²½Öè1£ºÆôÓÃ¸ßDPIËõ·Å£¨Qt5.6+£©
-    // ×Ô¶¯¸ù¾İÏµÍ³DPI¼ÆËãËõ·ÅÒò×Ó
+    // æ­¥éª¤1ï¼šå¯ç”¨é«˜DPIç¼©æ”¾ï¼ˆQt5.6+ï¼‰
+    // è‡ªåŠ¨æ ¹æ®ç³»ç»ŸDPIè®¡ç®—ç¼©æ”¾å› å­
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
-    // ²½Öè2£ºÆôÓÃ¸ßDPIÎ»Í¼Ö§³Ö£¨Qt5.10+£©
-    // È·±£QPixmap/QImageÔÚ¸ßDPIÏÂÊ¹ÓÃ¸ß·Ö±æÂÊ×ÊÔ´
+    // æ­¥éª¤2ï¼šå¯ç”¨é«˜DPIä½å›¾æ”¯æŒï¼ˆQt5.10+ï¼‰
+    // ç¡®ä¿QPixmap/QImageåœ¨é«˜DPIä¸‹ä½¿ç”¨é«˜åˆ†è¾¨ç‡èµ„æº
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
-    // ²½Öè3£ºQt6 ¶îÍâÉèÖÃ£¨¿ÉÑ¡£¬ÔöÇ¿¶àÆÁDPIÖ§³Ö£©
+    // æ­¥éª¤3ï¼šQt6 é¢å¤–è®¾ç½®ï¼ˆå¯é€‰ï¼Œå¢å¼ºå¤šå±DPIæ”¯æŒï¼‰
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QApplication::setHighDpiScaleFactorRoundingPolicy(
-        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough // ½ûÓÃËõ·ÅÒò×ÓÉáÈë£¬Ìá¸ß¾«¶È
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough // ç¦ç”¨ç¼©æ”¾å› å­èˆå…¥ï¼Œæé«˜ç²¾åº¦
     );
 #endif
 

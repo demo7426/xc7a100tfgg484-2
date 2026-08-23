@@ -3,7 +3,7 @@ project(simple_xdma_app LANGUAGES CXX)
 
 include(qt.cmake)
 
-set(CMAKE_AUTORCC ON)               # 关键！Qt5必须手动打开资源编译
+set(CMAKE_AUTORCC ON)               # 鍏抽敭锛丵t5蹇呴』鎵嬪姩鎵撳紑璧勬簮缂栬瘧
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -46,7 +46,7 @@ link_libraries(
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 
 
-# 仅该目标可见，不传递给依赖它的目标
+# 浠呰鐩爣鍙锛屼笉浼犻�掔粰渚濊禆瀹冪殑鐩爣
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     SINGLE_MODE
     VERSION="1.0"

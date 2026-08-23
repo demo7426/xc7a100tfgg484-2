@@ -1,16 +1,16 @@
 /*************************************************
 Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
-ÎÄ¼şÃû:	hzcc_xdma_test.h
-×÷  Õß:	Ç®Èñ      °æ±¾: V1.0     ĞÂ½¨ÈÕÆÚ: 2026.08.10
-Ãè  Êö: ÊµÏÖxilinx¹Ù·½µÄxdma ipºËµÄ¶ÁĞ´Êı¾İĞÔÄÜ²âÊÔ
-±¸  ×¢:
-ĞŞ¸Ä¼ÇÂ¼:
+æ–‡ä»¶å:	hzcc_xdma_test.h
+ä½œ  è€…:	é’±é”      ç‰ˆæœ¬: V1.0     æ–°å»ºæ—¥æœŸ: 2026.08.10
+æ  è¿°: å®ç°xilinxå®˜æ–¹çš„xdma ipæ ¸çš„è¯»å†™æ•°æ®æ€§èƒ½æµ‹è¯•
+å¤‡  æ³¨:
+ä¿®æ”¹è®°å½•:
 
-  1.  ÈÕÆÚ: 2026.08.10
-      ×÷Õß: Ç®Èñ
-      ÄÚÈİ:
-          1) ´ËÎªÄ£°åµÚÒ»¸ö°æ±¾£»
-      °æ±¾:V1.0
+  1.  æ—¥æœŸ: 2026.08.10
+      ä½œè€…: é’±é”
+      å†…å®¹:
+          1) æ­¤ä¸ºæ¨¡æ¿ç¬¬ä¸€ä¸ªç‰ˆæœ¬ï¼›
+      ç‰ˆæœ¬:V1.0
 
 *************************************************/
 
@@ -31,9 +31,9 @@ namespace hzcc
 {
 	typedef struct _SPEED_INFO
 	{
-		double Speed;			//ËÙ¶ÈĞÅÏ¢;µ¥Î»:MB/s
-		long long Time;			//Ê±¿ÌĞÅÏ¢;µ¥Î»:ºÁÃë
-		double AverageSpeed;	//Æ½¾ùËÙ¶È;µ¥Î»:MB/s
+		double Speed;			//é€Ÿåº¦ä¿¡æ¯;å•ä½:MB/s
+		long long Time;			//æ—¶åˆ»ä¿¡æ¯;å•ä½:æ¯«ç§’
+		double AverageSpeed;	//å¹³å‡é€Ÿåº¦;å•ä½:MB/s
 	}SPEED_INFO, *PSPEED_INFO;
 
 	class LCB_DLLEXPORT CXDMA_Test_Base
@@ -43,86 +43,86 @@ namespace hzcc
 		virtual ~CXDMA_Test_Base() = 0;
 
 		/// <summary>
-		/// ¿ªÊ¼h2cÊı¾İ²âÊÔ
+		/// å¼€å§‹h2cæ•°æ®æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		virtual int StartH2CTest() = 0;
 
 		/// <summary>
-		/// ¿ªÊ¼h2cÊı¾İÒì²½²âÊÔ
+		/// å¼€å§‹h2cæ•°æ®å¼‚æ­¥æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		virtual int StartH2C_AsyncTest();
 
 		/// <summary>
-		/// ¿ªÊ¼c2hÊı¾İ²âÊÔ
+		/// å¼€å§‹c2hæ•°æ®æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		virtual int StartC2HTest() = 0;
 
 		/// <summary>
-		/// ¿ªÊ¼c2hÊı¾İÒì²½²âÊÔ
+		/// å¼€å§‹c2hæ•°æ®å¼‚æ­¥æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		virtual int StartC2H_AsyncTest();
 		
 		/// <summary>
-		/// »Ø»·²âÊÔ
+		/// å›ç¯æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		virtual int LoopTest() = 0;
 
 	public:
 		/// <summary>
-		/// ¿ªÊ¼h2cËÙ¶È²âÊÔ
+		/// å¼€å§‹h2cé€Ÿåº¦æµ‹è¯•
 		/// </summary>
-		/// <param name="_DevIndex">Éè±¸Ë÷Òı</param>
+		/// <param name="_DevIndex">è®¾å¤‡ç´¢å¼•</param>
 		/// <returns></returns>
 		virtual int StartH2C_SpeedTest(int _DevIndex);
 		
 		/// <summary>
-		/// »ñÈ¡h2cµÄËÙ¶ÈĞÅÏ¢
+		/// è·å–h2cçš„é€Ÿåº¦ä¿¡æ¯
 		/// </summary>
 		/// <returns></returns>
 		virtual std::optional<std::vector<SPEED_INFO>> GetH2C_SpeedInfo();
 
 		/// <summary>
-		/// Í£Ö¹h2cËÙ¶È²âÊÔ
+		/// åœæ­¢h2cé€Ÿåº¦æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		virtual int StopH2C_SpeedTest();
 
 	public:
 		/// <summary>
-		/// ¿ªÊ¼c2hËÙ¶È²âÊÔ
+		/// å¼€å§‹c2hé€Ÿåº¦æµ‹è¯•
 		/// </summary>
-		/// <param name="_DevIndex">Éè±¸Ë÷Òı</param>
+		/// <param name="_DevIndex">è®¾å¤‡ç´¢å¼•</param>
 		/// <returns></returns>
 		virtual int StartC2H_SpeedTest(int _DevIndex);
 		
 		/// <summary>
-		/// »ñÈ¡c2hµÄËÙ¶ÈĞÅÏ¢
+		/// è·å–c2hçš„é€Ÿåº¦ä¿¡æ¯
 		/// </summary>
 		/// <returns></returns>
 		virtual std::optional<std::vector<SPEED_INFO>> GetC2H_SpeedInfo();
 
 		/// <summary>
-		/// Í£Ö¹c2hËÙ¶È²âÊÔ
+		/// åœæ­¢c2hé€Ÿåº¦æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		virtual int StopC2H_SpeedTest();
 
 	protected:
-		std::vector<std::basic_string<TCHAR>> m_vecBasePath;		//Éè±¸½Ó¿Ú
-		std::vector<std::basic_string<TCHAR>> m_vecC2H_Path;		//c2hÉè±¸½Ó¿Ú
-		std::vector<std::basic_string<TCHAR>> m_vecH2C_Path;		//h2cÉè±¸½Ó¿Ú
+		std::vector<std::basic_string<TCHAR>> m_vecBasePath;		//è®¾å¤‡æ¥å£
+		std::vector<std::basic_string<TCHAR>> m_vecC2H_Path;		//c2hè®¾å¤‡æ¥å£
+		std::vector<std::basic_string<TCHAR>> m_vecH2C_Path;		//h2cè®¾å¤‡æ¥å£
 
 	protected:
 		/// <summary>
-		/// ²éÕÒÆ¥ÅäµÄÉè±¸
+		/// æŸ¥æ‰¾åŒ¹é…çš„è®¾å¤‡
 		/// </summary>
 		/// <param name=""></param>
-		/// <returns>Éè±¸ÊıÁ¿</returns>
+		/// <returns>è®¾å¤‡æ•°é‡</returns>
 		unsigned int FindDevice(GUID tGuid);
 	};
 
@@ -133,71 +133,71 @@ namespace hzcc
 		~CXilinx_XDMA_Test() {};
 
 		/// <summary>
-		/// ¿ªÊ¼h2cÊı¾İ²âÊÔ
+		/// å¼€å§‹h2cæ•°æ®æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		int StartH2CTest() override;
 
 		/// <summary>
-		/// ¿ªÊ¼h2cÊı¾İÒì²½²âÊÔ
+		/// å¼€å§‹h2cæ•°æ®å¼‚æ­¥æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		int StartH2C_AsyncTest() override;
 
 		/// <summary>
-		/// ¿ªÊ¼c2hÊı¾İ²âÊÔ
+		/// å¼€å§‹c2hæ•°æ®æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		int StartC2HTest() override;
 
 		/// <summary>
-		/// ¿ªÊ¼c2hÊı¾İÒì²½²âÊÔ
+		/// å¼€å§‹c2hæ•°æ®å¼‚æ­¥æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		int StartC2H_AsyncTest() override;
 
 		/// <summary>
-		/// »Ø»·²âÊÔ
+		/// å›ç¯æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		int LoopTest() override;
 
 	public:
 		/// <summary>
-		/// ¿ªÊ¼h2cËÙ¶È²âÊÔ
+		/// å¼€å§‹h2cé€Ÿåº¦æµ‹è¯•
 		/// </summary>
-		/// <param name="_DevIndex">Éè±¸Ë÷Òı</param>
+		/// <param name="_DevIndex">è®¾å¤‡ç´¢å¼•</param>
 		/// <returns></returns>
 		int StartH2C_SpeedTest(int _DevIndex) override;
 
 		/// <summary>
-		/// »ñÈ¡h2cµÄËÙ¶ÈĞÅÏ¢
+		/// è·å–h2cçš„é€Ÿåº¦ä¿¡æ¯
 		/// </summary>
-		/// <returns>¶à¸östd::pair<ËÙ¶ÈĞÅÏ¢;µ¥Î»:MB/s--Ê±¿ÌĞÅÏ¢;µ¥Î»:ºÁÃë></returns>
+		/// <returns>å¤šä¸ªstd::pair<é€Ÿåº¦ä¿¡æ¯;å•ä½:MB/s--æ—¶åˆ»ä¿¡æ¯;å•ä½:æ¯«ç§’></returns>
 		std::optional<std::vector<SPEED_INFO>> GetH2C_SpeedInfo() override;
 
 		/// <summary>
-		/// Í£Ö¹h2cËÙ¶È²âÊÔ
+		/// åœæ­¢h2cé€Ÿåº¦æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		int StopH2C_SpeedTest() override;
 
 	public:
 		/// <summary>
-		/// ¿ªÊ¼c2hËÙ¶È²âÊÔ
+		/// å¼€å§‹c2hé€Ÿåº¦æµ‹è¯•
 		/// </summary>
-		/// <param name="_DevIndex">Éè±¸Ë÷Òı</param>
+		/// <param name="_DevIndex">è®¾å¤‡ç´¢å¼•</param>
 		/// <returns></returns>
 		int StartC2H_SpeedTest(int _DevIndex) override;
 
 		/// <summary>
-		/// »ñÈ¡c2hµÄËÙ¶ÈĞÅÏ¢
+		/// è·å–c2hçš„é€Ÿåº¦ä¿¡æ¯
 		/// </summary>
-		/// <returns>¶à¸östd::pair<ËÙ¶ÈĞÅÏ¢;µ¥Î»:MB/s--Ê±¿ÌĞÅÏ¢;µ¥Î»:ºÁÃë></returns>
+		/// <returns>å¤šä¸ªstd::pair<é€Ÿåº¦ä¿¡æ¯;å•ä½:MB/s--æ—¶åˆ»ä¿¡æ¯;å•ä½:æ¯«ç§’></returns>
 		std::optional<std::vector<SPEED_INFO>> GetC2H_SpeedInfo() override;
 
 		/// <summary>
-		/// Í£Ö¹c2hËÙ¶È²âÊÔ
+		/// åœæ­¢c2hé€Ÿåº¦æµ‹è¯•
 		/// </summary>
 		/// <returns></returns>
 		int StopC2H_SpeedTest() override;
@@ -224,10 +224,10 @@ namespace hzcc
 
 
 	private:
-		std::vector<std::thread*> m_vecThH2C;		//h2cÏß³Ì¶ÔÏó
+		std::vector<std::thread*> m_vecThH2C;		//h2cçº¿ç¨‹å¯¹è±¡
 		std::vector<int8_t> m_vecH2CIsRun;
 
-		std::vector<std::thread*> m_vecThC2H;		//c2hÏß³Ì¶ÔÏó
+		std::vector<std::thread*> m_vecThC2H;		//c2hçº¿ç¨‹å¯¹è±¡
 		std::vector<int8_t> m_vecC2HIsRun;
 		
 		std::vector<SPEED_INFO> m_vecH2CSpeed;

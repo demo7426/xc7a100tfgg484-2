@@ -1,16 +1,16 @@
 /*************************************************
 Copyright (C), 2026-2040    , Level Chip Co., Ltd.
-ÎÄ¼þÃû:	pcie_widget.cpp
-×÷  Õß:	Ç®Èñ      °æ±¾: V1.0     ÐÂ½¨ÈÕÆÚ: 2026.08.21
-Ãè  Êö: pcieÏà¹Ø¿ØÖÆ´°¿Ú
-±¸  ×¢:
-ÐÞ¸Ä¼ÇÂ¼:
+æ–‡ä»¶å:	pcie_widget.cpp
+ä½œ  è€…:	é’±é”      ç‰ˆæœ¬: V1.0     æ–°å»ºæ—¥æœŸ: 2026.08.21
+æ  è¿°: pcieç›¸å…³æŽ§åˆ¶çª—å£
+å¤‡  æ³¨:
+ä¿®æ”¹è®°å½•:
 
-  1.  ÈÕÆÚ: 2026.08.21
-	  ×÷Õß: Ç®Èñ
-	  ÄÚÈÝ:
-		  1) ´ËÎªÄ£°åµÚÒ»¸ö°æ±¾£»
-	  °æ±¾:V1.0
+  1.  æ—¥æœŸ: 2026.08.21
+	  ä½œè€…: é’±é”
+	  å†…å®¹:
+		  1) æ­¤ä¸ºæ¨¡æ¿ç¬¬ä¸€ä¸ªç‰ˆæœ¬ï¼›
+	  ç‰ˆæœ¬:V1.0
 
 *************************************************/
 
@@ -45,7 +45,7 @@ void CPCIe_Widget::InitUi(void) noexcept
 	ui.comboBox_RegSize->addItems(strListRegSize);
 	ui.comboBox_RegSize->setCurrentText(tr("32 Bit"));
 
-	////////////////////////////////Êý¾Ý³õÊ¼»¯ÉèÖÃ////////////////////////////////
+	////////////////////////////////æ•°æ®åˆå§‹åŒ–è®¾ç½®////////////////////////////////
 
 	m_dbYAxis_LowerLimit = std::nullopt;
 	m_dbYAxis_UpperLimit = std::nullopt;
@@ -65,7 +65,7 @@ void CPCIe_Widget::InitUi(void) noexcept
 	ui.widgetCustomPlot->xAxis->setLabel(tr("Time(s)"));
 	ui.widgetCustomPlot->yAxis->setLabel(tr("Speed(MB/s)"));
 
-	/* ÏÔÊ¾×ÓÍø¸ñÏß */
+	/* æ˜¾ç¤ºå­ç½‘æ ¼çº¿ */
 	ui.widgetCustomPlot->xAxis->grid()->setSubGridVisible(true);
 	ui.widgetCustomPlot->yAxis->grid()->setSubGridVisible(true);
 
@@ -90,7 +90,7 @@ void CPCIe_Widget::InitSignalSlots(void) noexcept
 	connect(&m_cTimer, &QTimer::timeout, this, &CPCIe_Widget::RefreshGraph);
 
 	connect(ui.pushButton_Start, &QPushButton::clicked, this, [this]() {
-		//Çå³þgraphÊý¾Ý
+		//æ¸…æ¥šgraphæ•°æ®
 		for (auto& it: m_vecCPGraph)
 		{
 			it->data()->clear();
@@ -101,7 +101,7 @@ void CPCIe_Widget::InitSignalSlots(void) noexcept
 
 		ui.widgetCustomPlot->replot();
 
-		//¿ªÊ¼h2c²âÊÔ
+		//å¼€å§‹h2cæµ‹è¯•
 		m_pcXDMA_Test->StartH2C_SpeedTest(0);
 		m_pcXDMA_Test->StartC2H_SpeedTest(0);
 
@@ -137,7 +137,7 @@ void CPCIe_Widget::RefreshGraph(void)
 	m_vecCPGraph[0]->addData(m_x, std::sin(m_x));
 	m_vecCPGraph[1]->addData(m_x, std::cos(m_x));
 
-	// ²»¹Ü³¬ÁË¶àÉÙ¸ö£¬Ò»ÂÉÉ¾µô´°¿ÚÍâµÄËùÓÐµã
+	// ä¸ç®¡è¶…äº†å¤šå°‘ä¸ªï¼Œä¸€å¾‹åˆ æŽ‰çª—å£å¤–çš„æ‰€æœ‰ç‚¹
 	double left = m_x - m_nMaxPointNum * dbInterval;
 
 	m_vecCPGraph[0]->data()->removeBefore(left);
@@ -158,7 +158,7 @@ void CPCIe_Widget::RefreshGraph(void)
 		{
 			m_vecCPGraph[0]->addData(vecSpeed[i].Time / 1000.0, vecSpeed[i].Speed);
 
-			// ²»¹Ü³¬ÁË¶àÉÙ¸ö£¬Ò»ÂÉÉ¾µô´°¿ÚÍâµÄËùÓÐµã
+			// ä¸ç®¡è¶…äº†å¤šå°‘ä¸ªï¼Œä¸€å¾‹åˆ æŽ‰çª—å£å¤–çš„æ‰€æœ‰ç‚¹
 			double left = vecSpeed[i].Speed / 1000.0 - m_nMaxPointNum * dbInterval;
 
 			m_vecCPGraph[0]->data()->removeBefore(left);
@@ -185,7 +185,7 @@ void CPCIe_Widget::RefreshGraph(void)
 		{
 			m_vecCPGraph[1]->addData(vecSpeed[i].Time / 1000.0, vecSpeed[i].Speed);
 
-			// ²»¹Ü³¬ÁË¶àÉÙ¸ö£¬Ò»ÂÉÉ¾µô´°¿ÚÍâµÄËùÓÐµã
+			// ä¸ç®¡è¶…äº†å¤šå°‘ä¸ªï¼Œä¸€å¾‹åˆ æŽ‰çª—å£å¤–çš„æ‰€æœ‰ç‚¹
 			double left = vecSpeed[i].Time / 1000.0 - m_nMaxPointNum * dbInterval;
 
 			m_vecCPGraph[1]->data()->removeBefore(left);
