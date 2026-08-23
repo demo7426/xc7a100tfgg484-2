@@ -1,26 +1,92 @@
-<UI version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>simple_xdma_appClass</class>
- <widget class="QMainWindow" name="simple_xdma_appClass" >
-  <property name="objectName" >
-   <string notr="true">simple_xdma_appClass</string>
-  </property>
-  <property name="geometry" >
+ <widget class="QMainWindow" name="simple_xdma_appClass">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
-    <height>400</height>
+    <width>1121</width>
+    <height>740</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>simple_xdma_app</string>
-  </property>  <widget class="QMenuBar" name="menuBar" />
-  <widget class="QToolBar" name="mainToolBar" />
-  <widget class="QWidget" name="centralWidget" />
-  <widget class="QStatusBar" name="statusBar" />
+  </property>
+  <widget class="QWidget" name="centralWidget"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1121</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menufile">
+    <property name="title">
+     <string>file</string>
+    </property>
+    <addaction name="actionopen"/>
+    <addaction name="actionsave"/>
+   </widget>
+   <widget class="QMenu" name="menuhelp">
+    <property name="title">
+     <string>help</string>
+    </property>
+    <addaction name="action_version"/>
+    <addaction name="action_about_qt"/>
+   </widget>
+   <widget class="QMenu" name="menutool">
+    <property name="title">
+     <string>tool</string>
+    </property>
+   </widget>
+   <addaction name="menufile"/>
+   <addaction name="menutool"/>
+   <addaction name="menuhelp"/>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionopen">
+   <property name="icon">
+    <iconset resource="simple_xdma_app.qrc">
+     <normaloff>:/image/res/image/open_file.png</normaloff>:/image/res/image/open_file.png</iconset>
+   </property>
+   <property name="text">
+    <string>open</string>
+   </property>
+  </action>
+  <action name="actionsave">
+   <property name="icon">
+    <iconset resource="simple_xdma_app.qrc">
+     <normaloff>:/image/res/image/save_file.png</normaloff>:/image/res/image/save_file.png</iconset>
+   </property>
+   <property name="text">
+    <string>save</string>
+   </property>
+  </action>
+  <action name="action_version">
+   <property name="text">
+    <string>version</string>
+   </property>
+  </action>
+  <action name="action_about_qt">
+   <property name="text">
+    <string>about qt</string>
+   </property>
+  </action>
  </widget>
- <layoutDefault spacing="6" margin="11" />
- <pixmapfunction></pixmapfunction>
-
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="simple_xdma_app.qrc"/>
+ </resources>
  <connections/>
-</UI>
+</ui>

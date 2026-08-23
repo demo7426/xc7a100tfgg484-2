@@ -14,13 +14,14 @@ find_package(Qt${QT_VERSION_MAJOR}
         Gui
         Widgets
         PrintSupport
+        Xml
 )
 qt_standard_project_setup()
 
 
 list(APPEND CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR})
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot ${CMAKE_CURRENT_SOURCE_DIR}/pcie ${CMAKE_CURRENT_SOURCE_DIR}/user_test)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot ${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie ${CMAKE_CURRENT_SOURCE_DIR}/user_test ${CMAKE_CURRENT_SOURCE_DIR}/model)
 
 set(PROJECT_SOURCES
     main.cpp
@@ -32,7 +33,8 @@ set(PROJECT_SOURCES
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} PROJECT_SOURCES)  
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot PROJECT_SOURCES)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/pcie PROJECT_SOURCES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie PROJECT_SOURCES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/model PROJECT_SOURCES)
 
 link_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/user_test 
@@ -63,5 +65,6 @@ target_link_libraries(${PROJECT_NAME}
         Qt5::Gui
         Qt5::Widgets
         Qt5::PrintSupport
+        Qt5::Xml
 )
 target_precompile_headers(${PROJECT_NAME} PUBLIC stdafx.h)

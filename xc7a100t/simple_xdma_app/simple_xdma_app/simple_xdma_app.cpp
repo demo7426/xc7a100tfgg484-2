@@ -19,16 +19,26 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 
 #include "pcie_widget.h"
 
+#include <QMessageBox>
+
+#define SOFT_VERSION ("V1.0")           //软件版本
+
 simple_xdma_app::simple_xdma_app(QWidget *parent)
     : QMainWindow(parent)
 {
     ui.setupUi(this);
 
+    this->InitData();
     this->InitUi();
+    this->InitSignalSlots();
 }
 
 simple_xdma_app::~simple_xdma_app()
 {}
+
+void simple_xdma_app::InitData(void)
+{
+}
 
 void simple_xdma_app::InitUi(void)
 {
@@ -50,4 +60,15 @@ void simple_xdma_app::InitUi(void)
     labelLeft->setText(tr("Card Num:") + QString::number(widget->GetCardNum()));
 
     ui.statusBar->addWidget(labelLeft);
+}
+
+void simple_xdma_app::InitSignalSlots(void)
+{
+    connect(ui.action_version, &QAction::triggered, this, [this]() {
+        QMessageBox::information(this, tr("Version information"), tr("Soft version: ") + SOFT_VERSION);
+        });
+
+    connect(ui.action_about_qt, &QAction::triggered, this, [this]() {
+        QMessageBox::aboutQt(this);
+        });
 }

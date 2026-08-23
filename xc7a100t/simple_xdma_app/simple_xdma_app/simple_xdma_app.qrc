@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/image">
         <file>res/image/x.png</file>
+        <file>res/image/open_file.png</file>
+        <file>res/image/save_file.png</file>
     </qresource>
 </RCC>

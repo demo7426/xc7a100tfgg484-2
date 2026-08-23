@@ -32,7 +32,18 @@ private:
 
 private:
     /// <summary>
+    /// 初始化数据
+    /// </summary>
+    /// <param name=""></param>
+    void InitData(void);
+
+    /// <summary>
     /// 初始化ui界面
     /// </summary>
     void InitUi(void);
+
+    /// <summary>
+    /// 初始化信号槽
+    /// </summary>
+    void InitSignalSlots(void);
 };
