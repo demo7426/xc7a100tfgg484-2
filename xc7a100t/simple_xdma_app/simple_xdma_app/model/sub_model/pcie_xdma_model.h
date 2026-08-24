@@ -1,8 +1,8 @@
 /*************************************************
 Copyright (C), 2026-2040    , Level Chip Co., Ltd.
-文件名:	base_model.h
+文件名:	pcie_xmda_model.h
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.24
-描  述: mvvm model层基类
+描  述: 
 备  注:	
 修改记录:
 
@@ -16,59 +16,19 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 
 #pragma once
 
-#include <QDomDocument>
+#include "base_model.h"
 
-#include "validataor.h"
 
 namespace hzcc
 {
     namespace simple_xdma_app
     {
-        class CIXMLSerializeable
+
+        class CIPCIe_XDMA_Model : public CIBase_Model
         {
         public:
-            CIXMLSerializeable() = default;
-            virtual ~CIXMLSerializeable() {}
-
-            /// <summary>
-            /// 保存数据到xml
-            /// </summary>
-            /// <param name="dom"></param>
-            virtual void SaveToXml(QDomElement& dom, QDomNode& node) const = 0;
-
-            /// <summary>
-            /// 从xml加载数据
-            /// </summary>
-            /// <param name="dom"></param>
-            virtual void LoadFormXml(QDomElement& dom) = 0;
-
-        };
-        
-        class CIExcelSerializeable
-        {
-        public:
-            CIExcelSerializeable() = default;
-            virtual ~CIExcelSerializeable(){}
-
-            /// <summary>
-            /// 保存数据到excel
-            /// </summary>
-            /// <param name="dom"></param>
-            virtual void SaveToExcel() const = 0;
-
-            /// <summary>
-            /// 从excel加载数据
-            /// </summary>
-            /// <param name="dom"></param>
-            virtual void LoadFormExcel() = 0;
-
-        };
-
-        class CIBase_Model: public CIXMLSerializeable, public CIExcelSerializeable, public CIValidator
-        {
-        public:
-            CIBase_Model() = default;
-            virtual ~CIBase_Model() = 0;
+            CIPCIe_XDMA_Model() = default;
+            virtual ~CIPCIe_XDMA_Model() {};
 
             /// <summary>
             /// 数据校验
@@ -103,7 +63,4 @@ namespace hzcc
 
         };
     }
-
 }
-
-

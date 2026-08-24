@@ -1,8 +1,8 @@
 /*************************************************
 Copyright (C), 2026-2040    , Level Chip Co., Ltd.
-文件名:	pcie_model.cpp
+文件名:	validataor.cpp
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.24
-描  述: pcie model
+描  述: validataor 校验
 备  注:
 修改记录:
 
@@ -14,16 +14,13 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 
 *************************************************/
 
-#include "pcie_model.h"
+#include "validataor.h"
 
-void CIPCIe_Model::SaveToXml(QDomElement& dom)
+namespace hzcc
 {
-}
+    namespace simple_xdma_app
+    {
 
-void CIPCIe_Model::LoadForXml(QDomElement& dom)
-{
-}
-
-void CIPCIe_Model::Validate(std::vector<ERROR_INFO>& errors)
-{
+        CIValidator::~CIValidator() {}
+    }
 }

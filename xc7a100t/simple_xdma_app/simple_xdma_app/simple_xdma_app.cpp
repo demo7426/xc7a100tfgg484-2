@@ -18,6 +18,8 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 #include "simple_xdma_app.h"
 
 #include "pcie_widget.h"
+#include "pcie_config_space_widget.h"
+#include "project_model.h"
 
 #include <QMessageBox>
 

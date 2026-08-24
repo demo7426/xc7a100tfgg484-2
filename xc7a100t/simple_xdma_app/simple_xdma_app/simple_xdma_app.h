@@ -19,6 +19,14 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 #include <QtWidgets/QMainWindow>
 #include "ui_simple_xdma_app.h"
 
+namespace hzcc
+{
+    namespace simple_xdma_app
+    {
+        class CIProject_Model;
+    }
+}
+
 class simple_xdma_app : public QMainWindow
 {
     Q_OBJECT
@@ -29,6 +37,8 @@ public:
 
 private:
     Ui::simple_xdma_appClass ui;
+
+    std::shared_ptr<hzcc::simple_xdma_app::CIProject_Model> m_cProject_Model;
 
 private:
     /// <summary>

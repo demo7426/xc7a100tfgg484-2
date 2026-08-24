@@ -1,8 +1,8 @@
 /*************************************************
 Copyright (C), 2026-2040    , Level Chip Co., Ltd.
-文件名:	base_model.h
+文件名:	log_model.cpp
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.24
-描  述: mvvm model层基类
+描  述: 
 备  注:
 修改记录:
 
@@ -14,31 +14,29 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 
 *************************************************/
 
-#include "base_model.h"
+#include "log_model.h"
 
 namespace hzcc
 {
     namespace simple_xdma_app
     {
-        CIBase_Model::~CIBase_Model() {}
-
-        void CIBase_Model::Validate(std::vector<VALIDATOR_ERROR>& errors)
+        void CILog_Model::Validate(std::vector<VALIDATOR_ERROR>& errors)
         {
         }
 
-        void CIBase_Model::SaveToXml(QDomElement& dom, QDomNode& node) const
+        void CILog_Model::SaveToXml(QDomElement& dom, QDomNode& node) const
         {
         }
 
-        void CIBase_Model::LoadFormXml(QDomElement& dom)
+        void CILog_Model::LoadFormXml(QDomElement& dom)
         {
         }
 
-        void CIBase_Model::SaveToExcel() const
+        void CILog_Model::SaveToExcel() const
         {
         }
 
-        void CIBase_Model::LoadFormExcel()
+        void CILog_Model::LoadFormExcel()
         {
         }
 

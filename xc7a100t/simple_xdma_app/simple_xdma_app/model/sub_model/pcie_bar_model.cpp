@@ -1,8 +1,8 @@
 /*************************************************
 Copyright (C), 2026-2040    , Level Chip Co., Ltd.
-文件名:	base_model.h
+文件名:	pcie_bar_model.cpp
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.24
-描  述: mvvm model层基类
+描  述: 
 备  注:
 修改记录:
 
@@ -14,31 +14,29 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 
 *************************************************/
 
-#include "base_model.h"
+#include "pcie_bar_model.h"
 
 namespace hzcc
 {
     namespace simple_xdma_app
     {
-        CIBase_Model::~CIBase_Model() {}
-
-        void CIBase_Model::Validate(std::vector<VALIDATOR_ERROR>& errors)
+        void CIPCIe_Bar_Model::Validate(std::vector<VALIDATOR_ERROR>& errors)
         {
         }
 
-        void CIBase_Model::SaveToXml(QDomElement& dom, QDomNode& node) const
+        void CIPCIe_Bar_Model::SaveToXml(QDomElement& dom, QDomNode& node) const
         {
         }
 
-        void CIBase_Model::LoadFormXml(QDomElement& dom)
+        void CIPCIe_Bar_Model::LoadFormXml(QDomElement& dom)
         {
         }
 
-        void CIBase_Model::SaveToExcel() const
+        void CIPCIe_Bar_Model::SaveToExcel() const
         {
         }
 
-        void CIBase_Model::LoadFormExcel()
+        void CIPCIe_Bar_Model::LoadFormExcel()
         {
         }
 
