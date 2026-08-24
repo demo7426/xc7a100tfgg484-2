@@ -19,8 +19,8 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 #include <chrono>
 
 #include "debug.h"
-#include "hzcc_xdma_test.h"
-#include "hzcc_xdma_test_factory.h"
+#include "hzcc_middleware_xdma.h"
+#include "hzcc_middleware_xdma_factory.h"
 
 enum class _USER_CMD_TYPE: int32_t
 {
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 		if(argc > 1)
 			eCmd = static_cast<_USER_CMD_TYPE>(std::atoi(argv[1]));
 
-		hzcc::CXDMA_Test_Base* pcXDMA_Test = hzcc::CXDMA_Test_Base_Factory::GetInstance()->GetPtr(hzcc::XDMA_TYPE::XILINX);
+		hzcc::middleware::CXDMA_Base* pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::XILINX);
 		DEBUG(DEBUG_LEVEL_INFO, "");
 
 		switch (eCmd)

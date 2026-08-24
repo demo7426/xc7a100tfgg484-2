@@ -43,7 +43,7 @@ CPCIe_Widget::~CPCIe_Widget()
 
 void CPCIe_Widget::InitData(void)
 {
-	m_pcXDMA_Test = hzcc::CXDMA_Test_Base_Factory::GetInstance()->GetPtr(hzcc::XDMA_TYPE::XILINX);
+	m_pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::XILINX);
 	if (m_pcXDMA_Test == nullptr)
 	{
 		QMessageBox::critical(this, tr("Critical dialog"), tr("Init is error."));

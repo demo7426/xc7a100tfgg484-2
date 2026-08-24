@@ -1,6 +1,6 @@
 /*************************************************
 Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
-文件名:	hzcc_xdma_test_factory.h
+文件名:	hzcc_middleware_xdma_factory.h
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.23
 描  述: 实现xdma ip核工厂
 备  注:
@@ -16,30 +16,32 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 
 #pragma once
 
-#include "hzcc_xdma_test.h"
-#include "hzcc_singleton.h"
+#include "hzcc_middleware_xdma.h"
+#include "singleton.h"
 
 namespace hzcc 
 {
-	enum XDMA_TYPE
+	namespace middleware
 	{
-		NONE = 0,
-		XILINX,			//xilinx xdma ip类型
+		enum XDMA_TYPE
+		{
+			NONE = 0,
+			XILINX,			//xilinx xdma ip类型
 
-	};
+		};
 
-	class LCB_DLLEXPORT CXDMA_Test_Base_Factory : public CSingleton<CXDMA_Test_Base_Factory>
-	{
-		friend class CSingleton<CXDMA_Test_Base_Factory>;
-	public:
-		~CXDMA_Test_Base_Factory() = default;
-		
-		CXDMA_Test_Base* GetPtr(XDMA_TYPE type);
+		class LCB_DLLEXPORT CXDMA_Base_Factory : public CSingleton<CXDMA_Base_Factory>
+		{
+			friend class CSingleton<CXDMA_Base_Factory>;
+		public:
+			~CXDMA_Base_Factory() = default;
 
-	private:
+			CXDMA_Base* GetPtr(XDMA_TYPE type);
 
-	};
+		private:
 
-
+		};
+	}
+	
 }
 

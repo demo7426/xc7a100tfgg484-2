@@ -21,7 +21,7 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 #include <optional>
 
 #include "ui_pcie_widget.h"
-#include "hzcc_xdma_test_factory.h"
+#include "hzcc_middleware_xdma_factory.h"
 
 class QCPGraph;
 
@@ -53,7 +53,7 @@ private:
 
     static constexpr qint32 m_nMaxPointNum = 1200; //最大数据量
     
-    hzcc::CXDMA_Test_Base* m_pcXDMA_Test = nullptr;
+    hzcc::middleware::CXDMA_Base* m_pcXDMA_Test = nullptr;
 
     std::optional<double> m_dbYAxis_LowerLimit = std::nullopt;              //y轴数据下限             
     std::optional<double> m_dbYAxis_UpperLimit = std::nullopt;              //y轴数据上限

@@ -21,7 +21,7 @@ qt_standard_project_setup()
 
 list(APPEND CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR})
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot ${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie ${CMAKE_CURRENT_SOURCE_DIR}/user_test ${CMAKE_CURRENT_SOURCE_DIR}/model)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot ${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie ${CMAKE_CURRENT_SOURCE_DIR}/middleware ${CMAKE_CURRENT_SOURCE_DIR}/model)
 
 set(PROJECT_SOURCES
     main.cpp
@@ -37,12 +37,12 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie PROJECT_SOURCES
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/model PROJECT_SOURCES)
 
 link_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/user_test 
+    ${CMAKE_CURRENT_SOURCE_DIR}/middleware 
     ${CMAKE_CURRENT_SOURCE_DIR} 
 )
 
 link_libraries(
-    user_test
+    middleware
 )
 
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})

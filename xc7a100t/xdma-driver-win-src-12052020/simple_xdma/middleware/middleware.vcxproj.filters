@@ -14,47 +14,44 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="头文件\include">
-      <UniqueIdentifier>{8a2d136f-00cc-42e7-b572-9932ddb3bb66}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\src">
-      <UniqueIdentifier>{e81a471a-9ba9-4316-b4fb-3840595c6c06}</UniqueIdentifier>
+      <UniqueIdentifier>{aed3e101-45de-432e-8d1e-7e5134aa80f1}</UniqueIdentifier>
     </Filter>
     <Filter Include="头文件\include\xdma">
-      <UniqueIdentifier>{fddd5372-8cc6-4fd5-a2a4-9d914d043d3e}</UniqueIdentifier>
+      <UniqueIdentifier>{1487d42c-a608-4098-b084-ef676b4aa2ca}</UniqueIdentifier>
     </Filter>
-    <Filter Include="源文件\src\xdma">
-      <UniqueIdentifier>{27e90c8e-8ea0-4c7a-995a-785316783e97}</UniqueIdentifier>
+    <Filter Include="源文件\xdma">
+      <UniqueIdentifier>{ed14aff4-99d9-4c0b-bdad-8c61828729cd}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\xdma\hzcc_middleware_xdma.cpp">
+      <Filter>源文件\xdma</Filter>
+    </ClCompile>
+    <ClCompile Include="src\xdma\hzcc_middleware_xdma_factory.cpp">
+      <Filter>源文件\xdma</Filter>
+    </ClCompile>
+    <ClCompile Include="src\xdma\hzcc_middleware_xdma_xilinx.cpp">
+      <Filter>源文件\xdma</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\debug.h">
       <Filter>头文件\include</Filter>
     </ClInclude>
-    <ClInclude Include="include\hzcc_singleton.h">
+    <ClInclude Include="include\singleton.h">
       <Filter>头文件\include</Filter>
     </ClInclude>
-    <ClInclude Include="include\xdma\hzcc_xdma_test.h">
+    <ClInclude Include="include\xdma\hzcc_middleware_xdma.h">
       <Filter>头文件\include\xdma</Filter>
     </ClInclude>
-    <ClInclude Include="include\xdma\hzcc_xdma_test_factory.h">
+    <ClInclude Include="include\xdma\hzcc_middleware_xdma_factory.h">
       <Filter>头文件\include\xdma</Filter>
     </ClInclude>
-    <ClInclude Include="include\xdma\hzcc_xilinx_xdma_test.h">
+    <ClInclude Include="include\xdma\hzcc_middleware_xdma_xilinx.h">
       <Filter>头文件\include\xdma</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\xdma\hzcc_xdma_test.cpp">
-      <Filter>源文件\src\xdma</Filter>
-    </ClCompile>
-    <ClCompile Include="src\xdma\hzcc_xdma_test_factory.cpp">
-      <Filter>源文件\src\xdma</Filter>
-    </ClCompile>
-    <ClCompile Include="src\xdma\hzcc_xilinx_xdma_test.cpp">
-      <Filter>源文件\src\xdma</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
