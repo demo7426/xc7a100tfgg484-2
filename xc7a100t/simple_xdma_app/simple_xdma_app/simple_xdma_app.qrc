@@ -1,7 +1,7 @@
 <RCC>
     <qresource prefix="/image">
-        <file>res/image/x.png</file>
-        <file>res/image/open_file.png</file>
-        <file>res/image/save_file.png</file>
+        <file>misc/res/image/open_file.png</file>
+        <file>misc/res/image/save_file.png</file>
+        <file>misc/res/image/x.png</file>
     </qresource>
 </RCC>

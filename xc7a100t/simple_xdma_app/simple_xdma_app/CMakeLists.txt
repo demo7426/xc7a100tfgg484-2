@@ -21,13 +21,23 @@ qt_standard_project_setup()
 
 list(APPEND CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR})
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot 
+include_directories(
+                    ${CMAKE_CURRENT_SOURCE_DIR}/public 
+
+                    ${CMAKE_CURRENT_SOURCE_DIR}/misc 
+                    ${CMAKE_CURRENT_SOURCE_DIR}/misc/middleware 
+                    ${CMAKE_CURRENT_SOURCE_DIR}/misc/qcustomplot 
+                    
+                    ${CMAKE_CURRENT_SOURCE_DIR}/model
+                    ${CMAKE_CURRENT_SOURCE_DIR}/model/sub_model
+
                     ${CMAKE_CURRENT_SOURCE_DIR}/view_model 
                     ${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie 
                     ${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie_config_space 
-                    ${CMAKE_CURRENT_SOURCE_DIR}/middleware 
-                    ${CMAKE_CURRENT_SOURCE_DIR}/model
-                    ${CMAKE_CURRENT_SOURCE_DIR}/model/sub_model
+
+                    ${CMAKE_CURRENT_SOURCE_DIR}/view
+                    ${CMAKE_CURRENT_SOURCE_DIR}/view/pcie
+                    ${CMAKE_CURRENT_SOURCE_DIR}/view/pcie_config_space
 )
 
 set(PROJECT_SOURCES
@@ -39,15 +49,23 @@ set(PROJECT_SOURCES
 )
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} PROJECT_SOURCES)  
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot PROJECT_SOURCES)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view_model PROJECT_SOURCES)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie PROJECT_SOURCES)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie_config_space PROJECT_SOURCES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/misc PROJECT_SOURCES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/misc/middleware PROJECT_SOURCES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/misc/qcustomplot PROJECT_SOURCES)
+
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/model PROJECT_SOURCES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/model/sub_model PROJECT_SOURCES)
 
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view_model PROJECT_SOURCES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie PROJECT_SOURCES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie_config_space  PROJECT_SOURCES)
+
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view  PROJECT_SOURCES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view/pcie  PROJECT_SOURCES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view/pcie_config_space  PROJECT_SOURCES)
+
 link_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/middleware 
+    ${CMAKE_CURRENT_SOURCE_DIR}/misc/middleware 
     ${CMAKE_CURRENT_SOURCE_DIR} 
 )
 

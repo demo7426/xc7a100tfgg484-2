@@ -17,7 +17,7 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 #pragma once
 
 #include "base_model.h"
-
+#include "base_info.h"
 
 namespace hzcc
 {
@@ -27,7 +27,7 @@ namespace hzcc
         class CIPCIe_Config_Space_Model : public CIBase_Model
         {
         public:
-            CIPCIe_Config_Space_Model() = default;
+            CIPCIe_Config_Space_Model();
             virtual ~CIPCIe_Config_Space_Model() {};
 
             /// <summary>
@@ -60,7 +60,7 @@ namespace hzcc
             /// <param name="dom"></param>
             virtual void LoadFormExcel() override;
         private:
-
+            PCI_COMMON_HEADER m_pci_common_header;
         };
     }
 }

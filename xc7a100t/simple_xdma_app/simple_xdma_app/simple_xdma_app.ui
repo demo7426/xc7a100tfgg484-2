@@ -58,7 +58,7 @@
   <action name="actionopen">
    <property name="icon">
     <iconset resource="simple_xdma_app.qrc">
-     <normaloff>:/image/res/image/open_file.png</normaloff>:/image/res/image/open_file.png</iconset>
+     <normaloff>:/image/misc/res/image/open_file.png</normaloff>:/image/misc/res/image/open_file.png</iconset>
    </property>
    <property name="text">
     <string>open</string>
@@ -67,7 +67,7 @@
   <action name="actionsave">
    <property name="icon">
     <iconset resource="simple_xdma_app.qrc">
-     <normaloff>:/image/res/image/save_file.png</normaloff>:/image/res/image/save_file.png</iconset>
+     <normaloff>:/image/misc/res/image/save_file.png</normaloff>:/image/misc/res/image/save_file.png</iconset>
    </property>
    <property name="text">
     <string>save</string>

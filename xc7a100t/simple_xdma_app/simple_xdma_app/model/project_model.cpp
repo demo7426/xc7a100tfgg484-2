@@ -15,6 +15,9 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 *************************************************/
 
 #include "project_model.h"
+#include "pcie_config_space_model.h"
+#include "pcie_xdma_model.h"
+#include "pcie_bar_model.h"
 
 namespace hzcc
 {
@@ -52,12 +55,30 @@ namespace hzcc
         {
         }
 
-        std::shared_ptr<CIBase_Model> CIProject_Model_Factory::Create(FILED_TYPE type)
+        CIBase_Model* CIProject_Model_Factory::Create(FILED_TYPE type)
         {
-            // TODO: 在此处插入 return 语句
+            CIBase_Model* base_model;
 
+            switch (type)
+            {
+            case hzcc::simple_xdma_app::FILED_TYPE::NONE:
+                break;
+            case hzcc::simple_xdma_app::FILED_TYPE::PCIE_BAR:
+                base_model = new CIPCIe_Bar_Model;
+                break;
+            case hzcc::simple_xdma_app::FILED_TYPE::PCIE_CONFIG_SPACE:
+                base_model = new CIPCIe_Config_Space_Model;
+                break;
+            case hzcc::simple_xdma_app::FILED_TYPE::PCIE_XMDA:
+                base_model = new CIPCIe_XDMA_Model;
+                break;
+            default:
+                break;
+            }
 
-            return nullptr;
+            throw std::runtime_error("Type is err.");
+
+            return base_model;
         }
     }
 }

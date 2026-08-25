@@ -1,0 +1,26 @@
+/*************************************************
+Copyright (C), 2026-2040    , Level Chip Co., Ltd.
+文件名:	types.h
+作  者:	钱锐      版本: V1.0     新建日期: 2026.08.24
+描  述: 
+备  注:	
+修改记录:
+
+  1.  日期: 2026.08.24
+      作者: 钱锐
+      内容:
+          1) 此为模板第一个版本；
+      版本:V1.0
+
+*************************************************/
+
+#pragma once
+
+typedef unsigned long   ULONG;
+typedef ULONG*          PULONG;
+
+typedef unsigned short  USHORT;
+typedef USHORT*         PUSHORT;
+
+typedef unsigned char   UCHAR;
+typedef UCHAR*          PUCHAR;

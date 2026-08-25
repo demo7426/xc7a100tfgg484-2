@@ -1,6 +1,6 @@
 /*************************************************
 Copyright (C), 2026-2040    , Level Chip Co., Ltd.
-文件名:	pcie_config_space_model.cpp
+文件名:	pcie_config_space_view_model.h
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.25
 描  述: pcie_config_space mdoel
 备  注:
@@ -14,15 +14,18 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 
 *************************************************/
 
-#include "pcie_config_space_model.h"
+#pragma once
 
-CPCIe_Config_Space_Model::CPCIe_Config_Space_Model(QWidget *parent)
-	: QWidget(parent)
+#include <QWidget>
+
+class CPCIe_Config_Space_View_Model : public QWidget
 {
-	
+	Q_OBJECT
 
-}
+public:
+    CPCIe_Config_Space_View_Model(QWidget *parent = nullptr);
+	~CPCIe_Config_Space_View_Model();
 
-CPCIe_Config_Space_Model::~CPCIe_Config_Space_Model()
-{
-}
+
+private:
+};

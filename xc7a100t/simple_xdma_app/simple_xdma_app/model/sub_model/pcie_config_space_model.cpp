@@ -14,12 +14,19 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 
 *************************************************/
 
+#include <memory.h>
+
 #include "pcie_config_space_model.h"
 
 namespace hzcc
 {
     namespace simple_xdma_app
     {
+        CIPCIe_Config_Space_Model::CIPCIe_Config_Space_Model() 
+        {
+            m_pci_common_header;// = std::make_shared<PCI_COMMON_HEADER>(new PCI_COMMON_HEADER);
+        }
+
         void CIPCIe_Config_Space_Model::Validate(std::vector<VALIDATOR_ERROR>& errors)
         {
         }

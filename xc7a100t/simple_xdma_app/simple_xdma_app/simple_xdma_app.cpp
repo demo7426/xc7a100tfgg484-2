@@ -44,7 +44,7 @@ void simple_xdma_app::InitData(void)
 
 void simple_xdma_app::InitUi(void)
 {
-    QIcon winIcon(":/image/res/image/x.png");
+    QIcon winIcon(":/misc/image/res/image/x.png");
     if (!winIcon.isNull())
     {
         setWindowIcon(winIcon);

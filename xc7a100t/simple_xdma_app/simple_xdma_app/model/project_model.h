@@ -79,7 +79,7 @@ namespace hzcc
         public:
             ~CIProject_Model_Factory() {}
 
-            std::shared_ptr<CIBase_Model> Create(FILED_TYPE type);
+            CIBase_Model* Create(FILED_TYPE type);
         };
     }
 }
