@@ -23,6 +23,11 @@ namespace hzcc
 {
     namespace simple_xdma_app
     {
+        CIProject_Model::CIProject_Model()
+        {
+            this->InitModel();
+        }
+
         void CIProject_Model::SaveToXml(std::string file_path) const
         {
         }
@@ -39,25 +44,42 @@ namespace hzcc
         {
         }
 
-        void CIProject_Model::AddSubModel(CIBase_Model* base_model)
+        void CIProject_Model::InitModel()
         {
+            this->AddSubModel(FILED_TYPE::PCIE_BAR, CIProject_Model_Factory::GetInstance()->Create(FILED_TYPE::PCIE_BAR));
+            this->AddSubModel(FILED_TYPE::PCIE_CONFIG_SPACE, CIProject_Model_Factory::GetInstance()->Create(FILED_TYPE::PCIE_CONFIG_SPACE));
+            this->AddSubModel(FILED_TYPE::PCIE_XMDA, CIProject_Model_Factory::GetInstance()->Create(FILED_TYPE::PCIE_XMDA));
         }
 
-        void CIProject_Model::RemoveSubModel(CIBase_Model* base_model)
+        void CIProject_Model::AddSubModel(FILED_TYPE type, CIBase_Model* base_model)
         {
+            m_mapBase[type] = base_model;
+        }
+
+        void CIProject_Model::RemoveSubModel(FILED_TYPE type)
+        {
+            m_mapBase.erase(type);
         }
 
         void CIProject_Model::Validate(std::vector<VALIDATOR_ERROR>& errors)
         {
+            for (auto& it: m_mapBase)
+            {
+                it.second->Validate(errors);
+            }
         }
 
         void CIProject_Model::RefreshData(FILED_TYPE type)
         {
+            for (auto& it : m_mapBase)
+            {
+                it.second->RefreshData(type);
+            }
         }
 
         CIBase_Model* CIProject_Model_Factory::Create(FILED_TYPE type)
         {
-            CIBase_Model* base_model;
+            CIBase_Model* base_model = nullptr;
 
             switch (type)
             {
@@ -75,8 +97,6 @@ namespace hzcc
             default:
                 break;
             }
-
-            throw std::runtime_error("Type is err.");
 
             return base_model;
         }

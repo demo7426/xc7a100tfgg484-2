@@ -40,5 +40,9 @@ namespace hzcc
         {
         }
 
+        void CIPCIe_Bar_Model::RefreshData(FILED_TYPE type)
+        {
+        }
+
     }
 }

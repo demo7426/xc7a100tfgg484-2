@@ -24,7 +24,7 @@ namespace hzcc
     namespace simple_xdma_app
     {
 
-        class CIPCIe_Config_Space_Model : public CIBase_Model
+        class CIPCIe_Config_Space_Model : public CIBase_Model, public PCI_COMMON_HEADER
         {
         public:
             CIPCIe_Config_Space_Model();
@@ -59,8 +59,12 @@ namespace hzcc
             /// </summary>
             /// <param name="dom"></param>
             virtual void LoadFormExcel() override;
-        private:
-            PCI_COMMON_HEADER m_pci_common_header;
+
+            /// <summary>
+            /// 刷新数据
+            /// </summary>
+            /// <param name="type"></param>
+            virtual void RefreshData(FILED_TYPE type) override;
         };
     }
 }

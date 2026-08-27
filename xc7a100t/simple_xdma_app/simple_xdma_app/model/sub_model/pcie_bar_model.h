@@ -59,8 +59,12 @@ namespace hzcc
             /// </summary>
             /// <param name="dom"></param>
             virtual void LoadFormExcel() override;
-        private:
-
+        
+            /// <summary>
+            /// 刷新数据
+            /// </summary>
+            /// <param name="type"></param>
+            virtual void RefreshData(FILED_TYPE type) override;
         };
     }
 }

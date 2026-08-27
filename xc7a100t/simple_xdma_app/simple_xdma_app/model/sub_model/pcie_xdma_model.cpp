@@ -40,5 +40,9 @@ namespace hzcc
         {
         }
 
+        void CIPCIe_XDMA_Model::RefreshData(FILED_TYPE type)
+        {
+        }
+
     }
 }

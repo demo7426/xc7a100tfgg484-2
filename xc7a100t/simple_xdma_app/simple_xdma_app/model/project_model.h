@@ -26,7 +26,7 @@ namespace hzcc
         class CIProject_Model : public CIBase_Model
         {
         public:
-            CIProject_Model() = default;
+            CIProject_Model();
             virtual ~CIProject_Model() {};
 
             /// <summary>
@@ -60,17 +60,21 @@ namespace hzcc
             void Validate(std::vector<VALIDATOR_ERROR>& errors) final;
 
         private:
-            void AddSubModel(CIBase_Model* base_model);
 
-            void RemoveSubModel(CIBase_Model* base_model);
-            
             /// <summary>
             /// 刷新数据
             /// </summary>
             /// <param name="type"></param>
-            void RefreshData(FILED_TYPE type);
+            void RefreshData(FILED_TYPE type) final;
 
+        private:
+            void InitModel();
 
+            void AddSubModel(FILED_TYPE type, CIBase_Model* base_model);
+
+            void RemoveSubModel(FILED_TYPE type);
+
+            std::map<FILED_TYPE, CIBase_Model*> m_mapBase;
         };
 
         class CIProject_Model_Factory : public CSingleton<CIProject_Model_Factory>

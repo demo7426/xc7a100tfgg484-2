@@ -21,6 +21,6 @@ namespace hzcc
     namespace simple_xdma_app
     {
 
-        CIValidator::~CIValidator() {}
+        CIValidataor::~CIValidataor() {}
     }
 }

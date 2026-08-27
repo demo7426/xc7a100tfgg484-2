@@ -16,11 +16,3 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 
 #pragma once
 
-typedef unsigned long   ULONG;
-typedef ULONG*          PULONG;
-
-typedef unsigned short  USHORT;
-typedef USHORT*         PUSHORT;
-
-typedef unsigned char   UCHAR;
-typedef UCHAR*          PUCHAR;

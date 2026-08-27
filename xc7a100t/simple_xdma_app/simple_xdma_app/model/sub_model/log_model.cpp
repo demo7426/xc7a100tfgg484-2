@@ -40,5 +40,9 @@ namespace hzcc
         {
         }
 
+        void CILog_Model::RefreshData(FILED_TYPE type)
+        {
+        }
+
     }
 }

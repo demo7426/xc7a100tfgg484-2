@@ -20,8 +20,6 @@ namespace hzcc
 {
     namespace simple_xdma_app
     {
-        CIBase_Model::~CIBase_Model() {}
-
         void CIBase_Model::Validate(std::vector<VALIDATOR_ERROR>& errors)
         {
         }

@@ -64,11 +64,11 @@ namespace hzcc
 
         };
 
-        class CIBase_Model: public CIXMLSerializeable, public CIExcelSerializeable, public CIValidator
+        class CIBase_Model: public CIXMLSerializeable, public CIExcelSerializeable, public CIValidataor
         {
         public:
             CIBase_Model() = default;
-            virtual ~CIBase_Model() = 0;
+            virtual ~CIBase_Model() = default;
 
             /// <summary>
             /// 数据校验
@@ -99,8 +99,12 @@ namespace hzcc
             /// </summary>
             /// <param name="dom"></param>
             virtual void LoadFormExcel() override;
-        private:
 
+            /// <summary>
+            /// 刷新数据
+            /// </summary>
+            /// <param name="type"></param>
+            virtual void RefreshData(FILED_TYPE type) = 0;
         };
     }
 

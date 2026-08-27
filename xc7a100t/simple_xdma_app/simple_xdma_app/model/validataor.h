@@ -50,13 +50,13 @@ namespace hzcc
             unsigned long long tag;             //错误标志;(一般为错误数据的内存地址)
         }VALIDATOR_ERROR, *PVALIDATOR_ERROR;
 
-        class CIValidator
+        class CIValidataor
         {
         protected:
 
         public:
-            CIValidator() = default;
-            virtual ~CIValidator() = 0;
+            CIValidataor() = default;
+            virtual ~CIValidataor() = 0;
 
             /// <summary>
             /// 数据校验
