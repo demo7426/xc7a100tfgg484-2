@@ -32,4 +32,10 @@ private:
 	Ui::CPCIe_Config_Space_WidgetClass ui;
 
 private:
+    /// <summary>
+    /// 初始化信号槽
+    /// </summary>
+    void InitSignalSlots(void);
+
+private:
 };

@@ -31,6 +31,8 @@ namespace hzcc
             PCIE_BAR,                       //PCIe Bar
             PCIE_CONFIG_SPACE,              //PCIe 配置空间
             PCIE_XMDA,                      //PCIe XDMA
+            
+            ALL,                            //All
         };
 
         enum class MESSAGE_TYPE : int

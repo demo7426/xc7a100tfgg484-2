@@ -61,13 +61,20 @@ namespace hzcc
             /// <param name=""></param>
             void Validate(std::vector<VALIDATOR_ERROR>& errors) final;
 
-        private:
-
             /// <summary>
             /// 刷新数据
             /// </summary>
             /// <param name="type"></param>
             void RefreshData(FILED_TYPE type) final;
+
+            /// <summary>
+            /// 获取子 Model，供 ViewModel 初始化使用
+            /// </summary>
+            inline std::shared_ptr<CIBase_Model> GetSubModel(FILED_TYPE type) const
+            {
+                auto it = m_mapBase.find(type);
+                return (it != m_mapBase.end()) ? it->second : nullptr;
+            }
 
         private:
             void InitModel();

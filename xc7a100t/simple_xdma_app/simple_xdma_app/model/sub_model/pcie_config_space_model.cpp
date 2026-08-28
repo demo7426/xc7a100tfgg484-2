@@ -49,6 +49,15 @@ namespace hzcc
 
         void CIPCIe_Config_Space_Model::RefreshData(FILED_TYPE type)
         {
+            if (type != FILED_TYPE::PCIE_CONFIG_SPACE && type != FILED_TYPE::ALL)
+                return;
+
+
+            //TODO:从硬件读取所有寄存器
+            this->set_VendorID(0x10ee);
+            this->set_DeviceID(0x7022);
+
+            emit allDataChanged();
         }
 
     }

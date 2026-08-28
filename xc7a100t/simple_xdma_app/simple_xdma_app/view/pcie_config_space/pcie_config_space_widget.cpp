@@ -21,8 +21,15 @@ CPCIe_Config_Space_Widget::CPCIe_Config_Space_Widget(QWidget *parent)
 {
 	ui.setupUi(this);
 
+	this->InitSignalSlots();
+
 }
 
 CPCIe_Config_Space_Widget::~CPCIe_Config_Space_Widget()
 {
+}
+
+void CPCIe_Config_Space_Widget::InitSignalSlots(void)
+{
+	
 }

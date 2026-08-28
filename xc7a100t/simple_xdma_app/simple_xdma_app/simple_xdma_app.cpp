@@ -30,8 +30,8 @@ simple_xdma_app::simple_xdma_app(QWidget *parent)
 {
     ui.setupUi(this);
 
-    this->InitData();
     this->InitUi();
+    this->InitData();
     this->InitSignalSlots();
 }
 
@@ -40,6 +40,7 @@ simple_xdma_app::~simple_xdma_app()
 
 void simple_xdma_app::InitData(void)
 {
+    m_cProject_Model = std::make_shared<hzcc::simple_xdma_app::CIProject_Model>();
 }
 
 void simple_xdma_app::InitUi(void)
@@ -49,11 +50,14 @@ void simple_xdma_app::InitUi(void)
     {
         setWindowIcon(winIcon);
     }
-
+     
     QLabel* labelLeft = new QLabel("", this);
 
     auto widget = new CPCIe_Widget(this);
-    setCentralWidget(widget);
+    auto widget1 = new CPCIe_Config_Space_Widget(this);
+    
+    ui.tabWidget->addTab(widget, tr("PCIe"));
+    ui.tabWidget->addTab(widget1, tr("PCIe_Config_Space"));
 
     this->setWindowTitle(tr("Simple XDMA App"));
 
@@ -73,4 +77,6 @@ void simple_xdma_app::InitSignalSlots(void)
     connect(ui.action_about_qt, &QAction::triggered, this, [this]() {
         QMessageBox::aboutQt(this);
         });
+
+    m_cProject_Model->RefreshData(hzcc::simple_xdma_app::FILED_TYPE::ALL);         //刷新所有的数据
 }

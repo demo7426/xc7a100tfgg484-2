@@ -63,8 +63,6 @@ namespace hzcc
             DECLARE_Q_PROPERTY(uint8_t, HeaderType, 0)
             DECLARE_Q_PROPERTY(uint8_t, BIST, 0)
 
-
-
         public:
             PCI_COMMON_HEADER() = default;
             virtual ~PCI_COMMON_HEADER() {};
@@ -285,6 +283,7 @@ namespace hzcc
             void InterruptPinChanged(uint8_t value);
             void CapabilitiesPtrChanged(uint8_t value);
 
+            void allDataChanged();   //整块数据变更通知
         private:
 
             union {

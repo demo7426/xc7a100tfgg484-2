@@ -39,12 +39,19 @@ include_directories(
                     ${CMAKE_CURRENT_SOURCE_DIR}/view/pcie_config_space
 )
 
+file(GLOB_RECURSE UI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/view/*.ui)
+
 set(PROJECT_SOURCES
     main.cpp
     simple_xdma_app.ui
     simple_xdma_app.h
     simple_xdma_app.cpp
     simple_xdma_app.qrc
+    ${UI_SOURCES}
+
+    
+    # 显式声明带 Q_OBJECT 的独立头文件，让 AUTOMOC 处理
+    ${CMAKE_CURRENT_SOURCE_DIR}/view_model/base_view_model.h
 )
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} PROJECT_SOURCES)  
