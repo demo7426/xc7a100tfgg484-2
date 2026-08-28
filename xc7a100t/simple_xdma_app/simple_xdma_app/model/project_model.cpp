@@ -51,7 +51,7 @@ namespace hzcc
             this->AddSubModel(FILED_TYPE::PCIE_XMDA, CIProject_Model_Factory::GetInstance()->Create(FILED_TYPE::PCIE_XMDA));
         }
 
-        void CIProject_Model::AddSubModel(FILED_TYPE type, CIBase_Model* base_model)
+        void CIProject_Model::AddSubModel(FILED_TYPE type, std::shared_ptr<CIBase_Model> base_model)
         {
             m_mapBase[type] = base_model;
         }
@@ -77,28 +77,23 @@ namespace hzcc
             }
         }
 
-        CIBase_Model* CIProject_Model_Factory::Create(FILED_TYPE type)
+        std::shared_ptr<CIBase_Model> CIProject_Model_Factory::Create(FILED_TYPE type)
         {
-            CIBase_Model* base_model = nullptr;
-
             switch (type)
             {
             case hzcc::simple_xdma_app::FILED_TYPE::NONE:
                 break;
             case hzcc::simple_xdma_app::FILED_TYPE::PCIE_BAR:
-                base_model = new CIPCIe_Bar_Model;
-                break;
+                return std::make_shared<CIPCIe_Bar_Model>();
             case hzcc::simple_xdma_app::FILED_TYPE::PCIE_CONFIG_SPACE:
-                base_model = new CIPCIe_Config_Space_Model;
-                break;
+                return std::make_shared<CIPCIe_Config_Space_Model>();
             case hzcc::simple_xdma_app::FILED_TYPE::PCIE_XMDA:
-                base_model = new CIPCIe_XDMA_Model;
-                break;
+                return std::make_shared<CIPCIe_XDMA_Model>();
             default:
                 break;
             }
 
-            return base_model;
+            return nullptr;
         }
     }
 }

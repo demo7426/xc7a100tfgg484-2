@@ -16,6 +16,8 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 
 #pragma once
 
+#include <memory>
+
 #include "base_model.h"
 #include "singleton.h"
 
@@ -70,11 +72,11 @@ namespace hzcc
         private:
             void InitModel();
 
-            void AddSubModel(FILED_TYPE type, CIBase_Model* base_model);
+            void AddSubModel(FILED_TYPE type, std::shared_ptr<CIBase_Model> base_model);
 
             void RemoveSubModel(FILED_TYPE type);
 
-            std::map<FILED_TYPE, CIBase_Model*> m_mapBase;
+            std::map<FILED_TYPE, std::shared_ptr<CIBase_Model>> m_mapBase;
         };
 
         class CIProject_Model_Factory : public CSingleton<CIProject_Model_Factory>
@@ -83,7 +85,7 @@ namespace hzcc
         public:
             ~CIProject_Model_Factory() {}
 
-            CIBase_Model* Create(FILED_TYPE type);
+            std::shared_ptr<CIBase_Model> Create(FILED_TYPE type);
         };
     }
 }
