@@ -24,8 +24,12 @@ namespace hzcc
     namespace simple_xdma_app
     {
         class CIProject_Model;
+        class CIProject_View_Model;
     }
 }
+
+class CPCIe_XDMA_Widget;
+class CPCIe_Config_Space_Widget;
 
 class simple_xdma_app : public QMainWindow
 {
@@ -39,6 +43,10 @@ private:
     Ui::simple_xdma_appClass ui;
 
     std::shared_ptr<hzcc::simple_xdma_app::CIProject_Model> m_cProject_Model;
+    std::shared_ptr<hzcc::simple_xdma_app::CIProject_View_Model> m_cProject_View_Model;
+
+    CPCIe_XDMA_Widget* m_pcWidget = nullptr;
+    CPCIe_Config_Space_Widget* m_pcWidget1 = nullptr;
 
 private:
     /// <summary>
@@ -56,4 +64,6 @@ private:
     /// 初始化信号槽
     /// </summary>
     void InitSignalSlots(void);
+
+    void BindView_ViewModel_Model(void);
 };

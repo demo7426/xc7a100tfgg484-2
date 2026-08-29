@@ -15,21 +15,62 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 *************************************************/
 
 #include "pcie_config_space_widget.h"
+#include "pcie_config_space_view_model.h"
 
 CPCIe_Config_Space_Widget::CPCIe_Config_Space_Widget(QWidget *parent)
 	: QWidget(parent)
 {
 	ui.setupUi(this);
 
-	this->InitSignalSlots();
-
+    this->InitUi();
 }
 
 CPCIe_Config_Space_Widget::~CPCIe_Config_Space_Widget()
 {
 }
 
+void CPCIe_Config_Space_Widget::InitViewModel(std::shared_ptr<hzcc::simple_xdma_app::CIBase_View_Model> model)
+{
+	if (auto old = m_view_model.lock()) {
+		old->disconnect(this);
+	}
+
+	m_view_model = std::dynamic_pointer_cast<hzcc::simple_xdma_app::CPCIe_Config_Space_View_Model>(model);
+
+	if (m_view_model.lock()) {
+		InitSignalSlots();    // ← 有 ViewModel 了才绑定
+	}
+}
+
+void CPCIe_Config_Space_Widget::InitUi(void)
+{
+    ui.vendorIDSpinBox->setRange(0, UINT16_MAX);
+    ui.deviceIDSpinBox->setRange(0, UINT16_MAX);
+}
+
 void CPCIe_Config_Space_Widget::InitSignalSlots(void)
 {
-	
+    auto vm = m_view_model.lock();
+    if (!vm) return;
+
+    // 逐个字段绑定
+    connect(vm.get(), &hzcc::simple_xdma_app::CPCIe_Config_Space_View_Model::VendorIDChanged,
+        this, [this](uint16_t val) {
+            ui.vendorIDSpinBox->setValue(val);
+        });
+
+    connect(vm.get(), &hzcc::simple_xdma_app::CPCIe_Config_Space_View_Model::DeviceIDChanged,
+        this, [this](uint16_t val) {
+            ui.deviceIDSpinBox->setValue(val);
+        });
+
+    // 批量刷新
+    connect(vm.get(), &hzcc::simple_xdma_app::CPCIe_Config_Space_View_Model::allDataChanged,
+        this, [this] {
+            auto vm = m_view_model.lock();
+            if (!vm) return;
+            
+            //ui.label_VendorID->setText(QString("0x%1").arg(vm->get_VendorID(), 4, 16, QChar('0')));
+            // ... 全量刷新
+        });
 }

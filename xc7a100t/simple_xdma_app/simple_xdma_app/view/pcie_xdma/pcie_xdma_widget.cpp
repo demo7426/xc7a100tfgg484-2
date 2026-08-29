@@ -14,11 +14,11 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 
 *************************************************/
 
-#include "pcie_widget.h"
+#include "pcie_xdma_widget.h"
 
 #include "qcustomplot.h"
 
-CPCIe_Widget::CPCIe_Widget(QWidget *parent)
+CPCIe_XDMA_Widget::CPCIe_XDMA_Widget(QWidget *parent)
 	: QWidget(parent)
 {
 	ui.setupUi(this);
@@ -28,7 +28,7 @@ CPCIe_Widget::CPCIe_Widget(QWidget *parent)
 	this->InitSignalSlots();
 }
 
-CPCIe_Widget::~CPCIe_Widget()
+CPCIe_XDMA_Widget::~CPCIe_XDMA_Widget()
 {
 	m_cTimer.stop();
 
@@ -41,7 +41,12 @@ CPCIe_Widget::~CPCIe_Widget()
 	}
 }
 
-void CPCIe_Widget::InitData(void)
+void CPCIe_XDMA_Widget::InitViewModel(std::shared_ptr<hzcc::simple_xdma_app::CIBase_View_Model> model)
+{
+	//m_view_model = std::dynamic_pointer_cast<hzcc::simple_xdma_app::CIBase_View_Model>(model);
+}
+
+void CPCIe_XDMA_Widget::InitData(void)
 {
 	m_pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::XILINX);
 	if (m_pcXDMA_Test == nullptr)
@@ -71,7 +76,7 @@ void CPCIe_Widget::InitData(void)
 	m_cTimer.setInterval(200);
 }
 
-void CPCIe_Widget::InitUi(void)
+void CPCIe_XDMA_Widget::InitUi(void)
 {
 	QStringList strListRegSize = { tr("8 Bit"), tr("16 Bit"), tr("32 Bit") , tr("64 Bit") };
 
@@ -98,9 +103,9 @@ void CPCIe_Widget::InitUi(void)
 	ui.pushButton_Stop->setEnabled(false);
 }
 
-void CPCIe_Widget::InitSignalSlots(void)
+void CPCIe_XDMA_Widget::InitSignalSlots(void)
 {
-	connect(&m_cTimer, &QTimer::timeout, this, &CPCIe_Widget::RefreshGraph);
+	connect(&m_cTimer, &QTimer::timeout, this, &CPCIe_XDMA_Widget::RefreshGraph);
 
 	connect(ui.pushButton_Start, &QPushButton::clicked, this, [this]() {
 		//清楚graph数据
@@ -141,7 +146,7 @@ void CPCIe_Widget::InitSignalSlots(void)
 
 }
 
-void CPCIe_Widget::RefreshGraph(void)
+void CPCIe_XDMA_Widget::RefreshGraph(void)
 {
 	const double dbInterval = 1;
 

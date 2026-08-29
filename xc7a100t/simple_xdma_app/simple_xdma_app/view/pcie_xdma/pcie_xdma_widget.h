@@ -20,18 +20,35 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 #include <vector>
 #include <optional>
 
-#include "ui_pcie_widget.h"
+#include "ui_pcie_xdma_widget.h"
 #include "hzcc_middleware_xdma_factory.h"
+#include "base_view.h"
 
 class QCPGraph;
 
-class CPCIe_Widget : public QWidget
+namespace hzcc
+{
+    namespace simple_xdma_app
+    {
+        class CIBase_View_Model;
+
+    }
+}
+
+
+class CPCIe_XDMA_Widget : public QWidget, public hzcc::simple_xdma_app::CIBase_View
 {
 	Q_OBJECT
 
 public:
-    CPCIe_Widget(QWidget *parent = nullptr);
-	~CPCIe_Widget();
+    CPCIe_XDMA_Widget(QWidget *parent = nullptr);
+	~CPCIe_XDMA_Widget();
+
+    /// <summary>
+    /// 初始化model
+    /// </summary>
+    /// <param name="model"></param>
+    virtual void InitViewModel(std::shared_ptr<hzcc::simple_xdma_app::CIBase_View_Model> model) override;
 
     /// <summary>
     /// 获取卡数量
@@ -44,7 +61,7 @@ public:
     }
 
 private:
-	Ui::CPCIe_WidgetClass ui;
+	Ui::CPCIe_XDMA_WidgetClass ui;
 
 
     std::vector<QCPGraph*> m_vecCPGraph;
@@ -59,6 +76,8 @@ private:
     std::optional<double> m_dbYAxis_UpperLimit = std::nullopt;              //y轴数据上限
 
     int m_nCardNum = 0;         //卡数量
+
+    //std::weak_ptr<hzcc::simple_xdma_app::CIBase_View_Model> m_view_model;
 
 private:
     /// <summary>

@@ -23,6 +23,7 @@ namespace hzcc
     {
         hzcc::simple_xdma_app::CIProject_View_Model::CIProject_View_Model()
         {
+            this->InitViewModel();
         }
 
         void CIProject_View_Model::InitViewModel()

@@ -17,9 +17,10 @@ Copyright (C), 2026-2040    , Level Chip Co., Ltd.
 #include "stdafx.h"
 #include "simple_xdma_app.h"
 
-#include "pcie_widget.h"
+#include "pcie_xdma_widget.h"
 #include "pcie_config_space_widget.h"
 #include "project_model.h"
+#include "project_view_model.h"
 
 #include <QMessageBox>
 
@@ -30,8 +31,9 @@ simple_xdma_app::simple_xdma_app(QWidget *parent)
 {
     ui.setupUi(this);
 
-    this->InitUi();
     this->InitData();
+    this->InitUi();
+    this->BindView_ViewModel_Model();
     this->InitSignalSlots();
 }
 
@@ -41,6 +43,7 @@ simple_xdma_app::~simple_xdma_app()
 void simple_xdma_app::InitData(void)
 {
     m_cProject_Model = std::make_shared<hzcc::simple_xdma_app::CIProject_Model>();
+    m_cProject_View_Model = std::make_shared<hzcc::simple_xdma_app::CIProject_View_Model>();
 }
 
 void simple_xdma_app::InitUi(void)
@@ -53,17 +56,17 @@ void simple_xdma_app::InitUi(void)
      
     QLabel* labelLeft = new QLabel("", this);
 
-    auto widget = new CPCIe_Widget(this);
-    auto widget1 = new CPCIe_Config_Space_Widget(this);
+    m_pcWidget = new CPCIe_XDMA_Widget(this);
+    m_pcWidget1 = new CPCIe_Config_Space_Widget(this);
     
-    ui.tabWidget->addTab(widget, tr("PCIe"));
-    ui.tabWidget->addTab(widget1, tr("PCIe_Config_Space"));
+    ui.tabWidget->addTab(m_pcWidget, tr("PCIe"));
+    ui.tabWidget->addTab(m_pcWidget1, tr("PCIe_Config_Space"));
 
     this->setWindowTitle(tr("Simple XDMA App"));
 
     this->resize(1280, 800);
 
-    labelLeft->setText(tr("Card Num:") + QString::number(widget->GetCardNum()));
+    labelLeft->setText(tr("Card Num:") + QString::number(m_pcWidget->GetCardNum()));
 
     ui.statusBar->addWidget(labelLeft);
 }
@@ -79,4 +82,25 @@ void simple_xdma_app::InitSignalSlots(void)
         });
 
     m_cProject_Model->RefreshData(hzcc::simple_xdma_app::FILED_TYPE::ALL);         //刷新所有的数据
+}
+
+void simple_xdma_app::BindView_ViewModel_Model(void)
+{
+    const hzcc::simple_xdma_app::FILED_TYPE types[] = {
+        hzcc::simple_xdma_app::FILED_TYPE::PCIE_BAR,
+        hzcc::simple_xdma_app::FILED_TYPE::PCIE_CONFIG_SPACE,
+        hzcc::simple_xdma_app::FILED_TYPE::PCIE_XMDA,
+    };
+
+    for (auto& type : types)
+    {
+        auto model = m_cProject_Model->GetSubModel(type);
+        auto view_model = m_cProject_View_Model->GetSubViewModel(type);
+
+        if(model && view_model)
+            view_model->InitModel(model);
+    }
+
+    m_pcWidget->InitViewModel(m_cProject_View_Model->GetSubViewModel(hzcc::simple_xdma_app::FILED_TYPE::PCIE_BAR));
+    m_pcWidget1->InitViewModel(m_cProject_View_Model->GetSubViewModel(hzcc::simple_xdma_app::FILED_TYPE::PCIE_CONFIG_SPACE));
 }

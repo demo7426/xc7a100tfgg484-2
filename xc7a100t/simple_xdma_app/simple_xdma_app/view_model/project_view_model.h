@@ -31,9 +31,9 @@ namespace hzcc
 
 
             /// <summary>
-            /// 获取子 Model，供 ViewModel 初始化使用
+            /// 获取子 View Model，供 View 初始化使用
             /// </summary>
-            inline std::shared_ptr<CIBase_View_Model> GetSubModel(FILED_TYPE type) const
+            inline std::shared_ptr<CIBase_View_Model> GetSubViewModel(FILED_TYPE type) const
             {
                 auto it = m_mapBase.find(type);
                 return (it != m_mapBase.end()) ? it->second : nullptr;

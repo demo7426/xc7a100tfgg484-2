@@ -31,11 +31,11 @@ include_directories(
                     ${CMAKE_CURRENT_SOURCE_DIR}/model/sub_model
 
                     ${CMAKE_CURRENT_SOURCE_DIR}/view_model 
-                    ${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie 
+                    ${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie_xdma 
                     ${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie_config_space 
 
                     ${CMAKE_CURRENT_SOURCE_DIR}/view
-                    ${CMAKE_CURRENT_SOURCE_DIR}/view/pcie
+                    ${CMAKE_CURRENT_SOURCE_DIR}/view/pcie_xdma
                     ${CMAKE_CURRENT_SOURCE_DIR}/view/pcie_config_space
 )
 
@@ -63,11 +63,11 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/model PROJECT_SOURCES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/model/sub_model PROJECT_SOURCES)
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view_model PROJECT_SOURCES)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie PROJECT_SOURCES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie_xdma PROJECT_SOURCES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view_model/pcie_config_space  PROJECT_SOURCES)
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view  PROJECT_SOURCES)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view/pcie  PROJECT_SOURCES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view/pcie_xdma  PROJECT_SOURCES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/view/pcie_config_space  PROJECT_SOURCES)
 
 link_directories(
