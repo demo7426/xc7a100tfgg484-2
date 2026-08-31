@@ -1,67 +1,22 @@
-/*
--- (c) Copyright 2019 Xilinx, Inc. All rights reserved.
---
--- This file contains confidential and proprietary information
--- of Xilinx, Inc. and is protected under U.S. and
--- international copyright and other intellectual property
--- laws.
---
--- DISCLAIMER
--- This disclaimer is not a license and does not grant any
--- rights to the materials distributed herewith. Except as
--- otherwise provided in a Valid license issued to you by
--- Xilinx, and to the maximum extent permitted by applicable
--- law: (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND
--- WITH ALL FAULTS, AND XILINX HEREBY DISCLAIMS ALL WARRANTIES
--- AND CONDITIONS, EXPRESS, IMPLIED, OR STATUTORY, INCLUDING
--- BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, NON-
--- INFRINGEMENT, OR FITNESS FOR ANY PARTICULAR PURPOSE; and
--- (2) Xilinx shall not be liable (whether in contract or tort,
--- including negligence, or under any other theory of
--- liability) for any loss or damage of any kind or nature
--- related to, arising under or in connection with these
--- materials, including for any direct, or any indirect,
--- special, incidental, or consequential loss or damage
--- (including loss of Data, profits, goodwill, or any type of
--- loss or damage suffered as a result of any action brought
--- by a third party) even if such damage or loss was
--- reasonably foreseeable or Xilinx had been advised of the
--- possibility of the same.
---
--- CRITICAL APPLICATIONS
--- Xilinx products are not designed or intended to be fail-
--- safe, or for use in any application requiring fail-safe
--- performance, such as life-support or safety devices or
--- systems, Class III medical devices, nuclear facilities,
--- applications related to the deployment of airbags, or any
--- other applications that could lead to death, personal
--- injury, or severe property or environmental damage
--- (individually and collectively, "Critical
--- Applications"). Customer assumes the sole risk and
--- liability of any use of Xilinx products in Critical
--- Applications, subject only to applicable laws and
--- regulations governing limitations on product liability.
---
--- THIS COPYRIGHT NOTICE AND DISCLAIMER MUST BE RETAINED AS
--- PART OF THIS FILE AT ALL TIMES.
--------------------------------------------------------------------------------
---
--- Vendor         : Xilinx
--- Revision       : $Revision: #11 $
--- Date           : $DateTime: 2019/06/30 21:59:08 $
--- Last Author    : $Author: arayajig $
---
--------------------------------------------------------------------------------
--- Description :
--- This file is part of the Xilinx DMA IP Core driver for Windows.
---
--------------------------------------------------------------------------------
-*/
+/*************************************************
+Copyright (C), 2009-2012    , Level Chip Co., Ltd.
+文件名:	driver.c
+作  者:	钱锐      版本: V1.0     新建日期: 2026.08.31
+描  述: 驱动入口文件
+备  注:	
+修改记录:
 
-// ========================= include dependencies =================================================
+  1.  日期: 2026.08.31
+      作者: 钱锐
+      内容:
+          1) 此为模板第一个版本；
+      版本:V1.0
+
+*************************************************/
 
 #include "driver.h"
-#include "file_io.h"
+#include "device.h"
+
 #include "trace.h"
 
 #ifdef DBG
@@ -70,263 +25,75 @@
 #include "driver.tmh"
 #endif
 
-// ========================= declarations ================================================= 
+/// <summary>
+/// 驱动卸载
+/// </summary>
+/// <param name="driver_object">驱动对象</param>
+/// <returns></returns>
+VOID DriverUnload(IN PDRIVER_OBJECT driver_object)
+{
+    UNREFERENCED_PARAMETER(driver_object);
 
-DRIVER_INITIALIZE DriverEntry;
-DRIVER_UNLOAD DriverUnload;
-
-EVT_WDF_DRIVER_DEVICE_ADD           EvtDeviceAdd;
-EVT_WDF_DEVICE_CONTEXT_CLEANUP      EvtDeviceCleanup;
-EVT_WDF_DEVICE_PREPARE_HARDWARE     EvtDevicePrepareHardware;
-EVT_WDF_DEVICE_RELEASE_HARDWARE     EvtDeviceReleaseHardware;
-
-static NTSTATUS EngineCreateQueue(WDFDEVICE device, XDMA_ENGINE* engine, WDFQUEUE* queue);
-
-// Mark these functions as pageable code
-#ifdef ALLOC_PRAGMA
-#pragma alloc_text (INIT, DriverEntry)
-#pragma alloc_text (PAGE, DriverUnload)
-#pragma alloc_text (PAGE, EvtDeviceAdd)
-#pragma alloc_text (PAGE, EvtDevicePrepareHardware)
-#pragma alloc_text (PAGE, EvtDeviceReleaseHardware)
-#pragma alloc_text (PAGE, EngineCreateQueue)
-#endif
-
-// ========================= definitions =================================================
-
-const char * const dateTimeStr = "Built " __DATE__ ", " __TIME__ ".";
-
-// main entry point - Called when driver is installed
-NTSTATUS DriverEntry(IN PDRIVER_OBJECT driverObject, IN PUNICODE_STRING registryPath) {
-    NTSTATUS			status = STATUS_SUCCESS;
-    WDF_DRIVER_CONFIG	DriverConfig;
-    WDFDRIVER			Driver;
-
-    // Initialize WPP Tracing
-    WPP_INIT_TRACING(driverObject, registryPath);
-    TraceInfo(DBG_INIT, "XDMA Driver - %s", dateTimeStr);
-
-    // Initialize the Driver Config; register the device add event callback
-    // EvtDeviceAdd() will be called when a device is found
-    WDF_DRIVER_CONFIG_INIT(&DriverConfig, EvtDeviceAdd);
-
-	/*isWheaEnabled = PshedIsSystemWheaEnabled();
-	if (isWheaEnabled == FALSE)
-	{
-		TraceInfo(DBG_INIT, "PSHED Enabled: %!STATUS!", status);
-		status = STATUS_SUCCESS;
-	}
-	else {
-		TraceInfo(DBG_INIT, "PSHED failed: %!STATUS!", status);
-	}*/
-
-
-    // Creates a WDFDRIVER object, the top of our device's tree of objects
-    status = WdfDriverCreate(driverObject, registryPath, WDF_NO_OBJECT_ATTRIBUTES, &DriverConfig,
-                             &Driver);
-    if (!NT_SUCCESS(status)) {
-        TraceError(DBG_INIT, "WdfDriverCreate failed: %!STATUS!", status);
-        WPP_CLEANUP(driverObject);
-        return status;
-    }
-
-	driverObject->DriverUnload = DriverUnload;
-    return status;
 }
 
-// Called before the driver is removed
-VOID DriverUnload(IN PDRIVER_OBJECT driverObject) {
-    PAGED_CODE();
-    UNREFERENCED_PARAMETER(driverObject);
-    TraceVerbose(DBG_INIT, "%!FUNC!");
-
-    WPP_CLEANUP(driverObject); // cleanup tracing
-
-    return;
-}
-
-NTSTATUS EvtDeviceAdd(IN WDFDRIVER Driver, IN PWDFDEVICE_INIT DeviceInit) {
-    NTSTATUS status = STATUS_SUCCESS;
-
-    PAGED_CODE();
-
-    TraceVerbose(DBG_INIT, "(Driver=0x%p)", Driver);
-
-    //  We prefer Direct I/O
-    //  Direct I/O only works with deferred buffer retrieval No guarantee that Direct I/O is
-    //  actually used Direct I/O is only used for buffers that are full pages Buffered I/O is used
-    //  for other parts of the transfer
-	    
-	WdfDeviceInitSetIoType(DeviceInit, WdfDeviceIoDirect);
-
-    // Set call-backs for any of the functions we are interested in. If no call-back is set, the 
-    // framework will take the default action by itself.
-    WDF_PNPPOWER_EVENT_CALLBACKS PnpPowerCallbacks;
-    WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&PnpPowerCallbacks);
-    PnpPowerCallbacks.EvtDevicePrepareHardware = EvtDevicePrepareHardware;
-    PnpPowerCallbacks.EvtDeviceReleaseHardware = EvtDeviceReleaseHardware;
-    WdfDeviceInitSetPnpPowerEventCallbacks(DeviceInit, &PnpPowerCallbacks);
-
-    WDF_POWER_POLICY_EVENT_CALLBACKS powerPolicyCallbacks;
-    WDF_POWER_POLICY_EVENT_CALLBACKS_INIT(&powerPolicyCallbacks);
-    WdfDeviceInitSetPowerPolicyEventCallbacks(DeviceInit, &powerPolicyCallbacks);
-
-    // Register file object call-backs
-    WDF_OBJECT_ATTRIBUTES fileAttributes;
-    WDF_FILEOBJECT_CONFIG fileConfig;
-    WDF_FILEOBJECT_CONFIG_INIT(&fileConfig, EvtDeviceFileCreate, EvtFileClose, EvtFileCleanup);
-    WDF_OBJECT_ATTRIBUTES_INIT(&fileAttributes);
-    fileAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
-    WDF_OBJECT_ATTRIBUTES_SET_CONTEXT_TYPE(&fileAttributes, FILE_CONTEXT);
-    WdfDeviceInitSetFileObjectConfig(DeviceInit, &fileConfig, &fileAttributes);
-    WdfDeviceInitSetIoInCallerContextCallback(DeviceInit, EvtDeviceIoInCallerContext);
-
-    // Specify the context type and size for the device we are about to create.
-    WDF_OBJECT_ATTRIBUTES deviceAttributes;
-    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DeviceContext);
-    // ContextCleanup will be called by the framework when it deletes the device. So you can defer
-    // freeing any resources allocated to Cleanup callback in the event EvtDeviceAdd returns any 
-    // error after the device is created.
-    deviceAttributes.EvtCleanupCallback = EvtDeviceCleanup;
-    WDFDEVICE device;
-    status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
-    if (!NT_SUCCESS(status)) {
-		TraceError(DBG_INIT, "WdfDeviceCreate failed: %!STATUS!", status);
-        return status;
-    }
-
-    // Create a user-space device interface
-    status = WdfDeviceCreateDeviceInterface(device, (LPGUID)&GUID_DEVINTERFACE_XDMA, NULL);
-    if (!NT_SUCCESS(status)) {
-        TraceError(DBG_INIT, "WdfDeviceCreateDeviceInterface failed %!STATUS!", status);
-        return status;
-    }
-
-	WDF_OBJECT_ATTRIBUTES attribs;
-	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-	attribs.SynchronizationScope = WdfSynchronizationScopeNone;
-	WDF_OBJECT_ATTRIBUTES_SET_CONTEXT_TYPE(&attribs, QUEUE_CONTEXT);
-
-    // create the default queue upon all I/O requests arrive
-    // accept multiple I/O request to run in parallel, they are sequentialized later
-    WDF_IO_QUEUE_CONFIG queueConfig;
-    WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(&queueConfig, WdfIoQueueDispatchParallel);
-    queueConfig.EvtIoDeviceControl = EvtIoDeviceControl; // callback handler for control requests
-    queueConfig.EvtIoRead = EvtIoRead; // callback handler for read requests
-    queueConfig.EvtIoWrite = EvtIoWrite; // callback handler for write requests
-    WDFQUEUE entryQueue;
-    status = WdfIoQueueCreate(device, &queueConfig, &attribs, &entryQueue);
-    if (!NT_SUCCESS(status)) {
-        TraceError(DBG_INIT, "WdfIoQueueCreate failed: %!STATUS!", status);
-        return status;
-    }
-
-    TraceVerbose(DBG_INIT, "returns %!STATUS!", status);
-    return status;
-}
-
-// Any device specific cleanup  - TODO device reset?
-VOID EvtDeviceCleanup(IN WDFOBJECT device) {
-    UNREFERENCED_PARAMETER(device);
-    TraceInfo(DBG_INIT, "%!FUNC!");
-}
-
-// Initialize device hardware and host buffers.
-// Called by plug and play manager
-NTSTATUS EvtDevicePrepareHardware(IN WDFDEVICE device, IN WDFCMRESLIST Resources,
-                                  IN WDFCMRESLIST ResourcesTranslated) {
-    PAGED_CODE();
-    UNREFERENCED_PARAMETER(Resources);
-    TraceVerbose(DBG_INIT, "-->Entry");
-
-    DeviceContext* ctx = GetDeviceContext(device);
-    PXDMA_DEVICE xdma = &(ctx->xdma);
-
-    ULONG userMax = 1;
-    ULONG h2cChannelMax = 2;
-    ULONG c2hChannelMax = 2;
-
-    NTSTATUS status = XDMA_DeviceOpen(device, xdma, &userMax, &h2cChannelMax, &c2hChannelMax,
-                                      Resources, ResourcesTranslated);
-    if (!NT_SUCCESS(status)) {
-        TraceError(DBG_INIT, "XDMA_DeviceOpen failed: %!STATUS!", status);
-        return status;
-    }
-
-    // create a queue for each engine
-    for (UINT dir = H2C; dir < 2; dir++) { // 0=H2C, 1=C2H
-        for (ULONG ch = 0; ch < XDMA_MAX_NUM_CHANNELS; ch++) {
-            XDMA_ENGINE* engine = &(xdma->engines[ch][dir]);
-            if (engine->enabled == TRUE) {
-                status = EngineCreateQueue(device, engine, &(ctx->engineQueue[dir][ch]));
-                if (!NT_SUCCESS(status)) {
-                    TraceError(DBG_INIT, "EngineCreateQueue() failed: %!STATUS!", status);
-                    return status;
-                }
-            }
-        }
-    }
-
-    for (UINT i = 0; i < XDMA_MAX_USER_IRQ; ++i) {
-        KeInitializeEvent(&ctx->eventSignals[i], NotificationEvent, FALSE);
-        XDMA_UserIsrRegister(xdma, i, HandleUserEvent, &ctx->eventSignals[i]);
-    }
-
-    TraceVerbose(DBG_INIT, "<--Exit returning %!STATUS!", status);
-    return status;
-}
-
-// Unmap PCIe resources
-NTSTATUS EvtDeviceReleaseHardware(IN WDFDEVICE Device, IN WDFCMRESLIST ResourcesTranslated) {
-
-    PAGED_CODE();
-    UNREFERENCED_PARAMETER(ResourcesTranslated);
-    TraceVerbose(DBG_INIT, "DeviceReleaseHw");
-    
-    DeviceContext* ctx = GetDeviceContext(Device);
-    if (ctx != NULL) {
-        XDMA_DeviceClose(&ctx->xdma);
-    }
-
-    TraceVerbose(DBG_INIT, "exit");
-    return STATUS_SUCCESS;
-}
-
-NTSTATUS EngineCreateQueue(WDFDEVICE device, XDMA_ENGINE* engine, WDFQUEUE* queue)
-// Create a WDF IO queue for a DMA engine
+/// <summary>
+/// 驱动加载
+/// </summary>
+/// <param name="driver_object">驱动对象</param>
+/// <param name="register_path">注册表路径</param>
+/// <returns></returns>
+NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_object, IN PUNICODE_STRING register_path)
 {
     NTSTATUS status = STATUS_SUCCESS;
-    WDF_IO_QUEUE_CONFIG config;
-    WDF_OBJECT_ATTRIBUTES attribs;
-    PQUEUE_CONTEXT context;
+    WDF_DRIVER_CONFIG tWDF_Driver_Config = { 0 };
+    WDF_OBJECT_ATTRIBUTES tWDF_Object_Attributes = { 0 };
+    WDFDRIVER tWDFDriver = NULL;
 
-    PAGED_CODE();
+    PDRIVER_CONTEXT ptDriver_Context = NULL;
 
-    // engine queue is sequential
-    WDF_IO_QUEUE_CONFIG_INIT(&config, WdfIoQueueDispatchSequential);
+    const char* const dataTimeStr = "Built " __DATE__ ", " __TIME__ ".";
 
-    ASSERTMSG("direction is neither H2C nor C2H!", (engine->dir == C2H) || (engine->dir == H2C));
-    if (engine->dir == H2C) { // callback handler for write requests
-        config.EvtIoWrite = EvtIoWriteDma;
-        TraceInfo(DBG_INIT, "EvtIoWrite=EvtIoWriteDma");
-    } else if (engine->dir == C2H) { // callback handler for read requests
-        config.EvtIoRead = EvtIoReadDma;
-        TraceInfo(DBG_INIT, "EvtIoRead=EvtIoReadDma");
-    }
+    TraceVerbose(DBG_INIT, "DriverEntry is start.");
 
-    // serialize all callbacks related to this queue. see ref [2]
-    WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-    attribs.SynchronizationScope = WdfSynchronizationScopeQueue;
-    WDF_OBJECT_ATTRIBUTES_SET_CONTEXT_TYPE(&attribs, QUEUE_CONTEXT);
-    status = WdfIoQueueCreate(device, &config, &attribs, queue);
-    if (!NT_SUCCESS(status)) {
-        TraceError(DBG_INIT, "WdfIoQueueCreate failed %d", status);
+    WDF_DRIVER_CONFIG_INIT(&tWDF_Driver_Config, EVT_WDF_Driver_Device_Add);
+
+    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&tWDF_Object_Attributes, DRIVER_CONTEXT);      
+
+    //创建框架驱动程序对象
+    status = WdfDriverCreate(driver_object, register_path, &tWDF_Object_Attributes, &tWDF_Driver_Config, &tWDFDriver);
+    if (!NT_SUCCESS(status))
+    {
+        TraceError(DBG_INIT, "WdfDriverCreate is error.");
         return status;
     }
 
-    // store arguments into queue context
-    context = GetQueueContext(*queue);
-    context->engine = engine;
+    ptDriver_Context = GetDriverContext(tWDFDriver);
+    if (!ptDriver_Context)
+    {
+        TraceError(DBG_INIT, "GetDriverContext is error.");
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    ANSI_STRING ansi;
+    UNICODE_STRING uni;
+
+    RtlInitAnsiString(&ansi, dataTimeStr);
+    RtlAnsiStringToUnicodeString(&uni, &ansi, TRUE);
+
+    if (uni.Length + sizeof(WCHAR) <= sizeof ptDriver_Context->versions)        //防止内存越界
+    {
+        RtlCopyMemory(ptDriver_Context->versions, uni.Buffer, uni.Length + sizeof(WCHAR));
+
+        status = STATUS_INSUFFICIENT_RESOURCES;
+        TraceError(DBG_INIT, "uni.Length = %u，sizeof ptDriver_Context->versions = %u.", uni.Length, sizeof ptDriver_Context->versions);
+    }
+    else
+    {
+        TraceVerbose(DBG_INIT, "DriverEntry is end.");
+    }
+
+    RtlFreeUnicodeString(&uni);
 
     return status;
 }
+

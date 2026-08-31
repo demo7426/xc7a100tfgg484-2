@@ -62,6 +62,7 @@ Class                     = %ClassName% ;TODO use a different class - maybe "Mem
 ClassGuid                 = {a3a4c1ce-5a80-452c-9b51-a98edd3378d1}
 DriverPackageDisplayName  = %simple_xdma.DRVDESC%
 DriverPackageType         = PlugAndPlay
+DriverVer                 = 11/22/2011,1.2
 Provider                  = %Companyname%
 Signature                 = "$WINDOWS NT$"
 PnpLockdown               = 1
