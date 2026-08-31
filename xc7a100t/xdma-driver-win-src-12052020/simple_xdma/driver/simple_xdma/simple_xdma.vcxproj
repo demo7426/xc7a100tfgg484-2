@@ -149,26 +149,13 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="device.c" />
-    <ClCompile Include="dma_engine.c" />
-    <ClCompile Include="driver.c" />
-    <ClCompile Include="file_io.c" />
-    <ClCompile Include="interrupt.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="device.h" />
-    <ClInclude Include="dma_engine.h" />
-    <ClInclude Include="driver.h" />
-    <ClInclude Include="file_io.h" />
-    <ClInclude Include="interrupt.h" />
-    <ClInclude Include="pcie_common.h" />
-    <ClInclude Include="reg.h" />
-    <ClInclude Include="trace.h" />
-    <ClInclude Include="xdma.h" />
-    <ClInclude Include="xdma_public.h" />
-  </ItemGroup>
-  <ItemGroup>
     <Inf Include="simple_xdma.inx" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="trace.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
