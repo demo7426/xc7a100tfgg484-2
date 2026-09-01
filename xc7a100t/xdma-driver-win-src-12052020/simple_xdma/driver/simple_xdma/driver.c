@@ -26,6 +26,13 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #endif
 
 /// <summary>
+/// 初始化注册表参数
+/// </summary>
+/// <param name="driver_object"></param>
+/// <returns></returns>
+static NTSTATUS InitRegistryParameter(IN PDRIVER_OBJECT driver_object);
+
+/// <summary>
 /// 驱动卸载
 /// </summary>
 /// <param name="driver_object">驱动对象</param>
@@ -94,6 +101,17 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_object, IN PUNICODE_STRING registe
 
     RtlFreeUnicodeString(&uni);
 
+    if (NT_SUCCESS(status))
+        status = InitRegistryParameter(driver_object);
+
     return status;
 }
 
+static NTSTATUS InitRegistryParameter(IN PDRIVER_OBJECT driver_object)
+{
+    UNREFERENCED_PARAMETER(driver_object);
+
+    NTSTATUS status = STATUS_SUCCESS;
+
+    return status;
+}
