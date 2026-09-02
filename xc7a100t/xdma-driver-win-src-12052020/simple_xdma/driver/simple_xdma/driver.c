@@ -1,16 +1,16 @@
-/*************************************************
+ï»¿/*************************************************
 Copyright (C), 2009-2012    , Level Chip Co., Ltd.
-ÎÄ¼şÃû:	driver.c
-×÷  Õß:	Ç®Èñ      °æ±¾: V1.0     ĞÂ½¨ÈÕÆÚ: 2026.08.31
-Ãè  Êö: Çı¶¯Èë¿ÚÎÄ¼ş
-±¸  ×¢:	
-ĞŞ¸Ä¼ÇÂ¼:
+æ–‡ä»¶å:	driver.c
+ä½œ  è€…:	é’±é”      ç‰ˆæœ¬: V1.0     æ–°å»ºæ—¥æœŸ: 2026.08.31
+æ  è¿°: é©±åŠ¨å…¥å£æ–‡ä»¶
+å¤‡  æ³¨:	
+ä¿®æ”¹è®°å½•:
 
-  1.  ÈÕÆÚ: 2026.08.31
-      ×÷Õß: Ç®Èñ
-      ÄÚÈİ:
-          1) ´ËÎªÄ£°åµÚÒ»¸ö°æ±¾£»
-      °æ±¾:V1.0
+  1.  æ—¥æœŸ: 2026.08.31
+      ä½œè€…: é’±é”
+      å†…å®¹:
+          1) æ­¤ä¸ºæ¨¡æ¿ç¬¬ä¸€ä¸ªç‰ˆæœ¬ï¼›
+      ç‰ˆæœ¬:V1.0
 
 *************************************************/
 
@@ -26,28 +26,29 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #endif
 
 /// <summary>
-/// ³õÊ¼»¯×¢²á±í²ÎÊı
+/// åˆå§‹åŒ–æ³¨å†Œè¡¨å‚æ•°
 /// </summary>
 /// <param name="driver_object"></param>
 /// <returns></returns>
 static NTSTATUS InitRegistryParameter(IN PDRIVER_OBJECT driver_object);
 
 /// <summary>
-/// Çı¶¯Ğ¶ÔØ
+/// é©±åŠ¨å¸è½½
 /// </summary>
-/// <param name="driver_object">Çı¶¯¶ÔÏó</param>
+/// <param name="driver_object">é©±åŠ¨å¯¹è±¡</param>
 /// <returns></returns>
 VOID DriverUnload(IN PDRIVER_OBJECT driver_object)
 {
-    UNREFERENCED_PARAMETER(driver_object);
+    TraceVerbose(DBG_INIT, "DriverUnload is end.");
 
+    WPP_CLEANUP(driver_object);
 }
 
 /// <summary>
-/// Çı¶¯¼ÓÔØ
+/// é©±åŠ¨åŠ è½½
 /// </summary>
-/// <param name="driver_object">Çı¶¯¶ÔÏó</param>
-/// <param name="register_path">×¢²á±íÂ·¾¶</param>
+/// <param name="driver_object">é©±åŠ¨å¯¹è±¡</param>
+/// <param name="register_path">æ³¨å†Œè¡¨è·¯å¾„</param>
 /// <returns></returns>
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_object, IN PUNICODE_STRING register_path)
 {
@@ -60,17 +61,21 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_object, IN PUNICODE_STRING registe
 
     const char* const dataTimeStr = "Built " __DATE__ ", " __TIME__ ".";
 
+    WPP_INIT_TRACING(driver_object, register_path);
+
     TraceVerbose(DBG_INIT, "DriverEntry is start.");
 
     WDF_DRIVER_CONFIG_INIT(&tWDF_Driver_Config, EVT_WDF_Driver_Device_Add);
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&tWDF_Object_Attributes, DRIVER_CONTEXT);      
 
-    //´´½¨¿ò¼ÜÇı¶¯³ÌĞò¶ÔÏó
+    //åˆ›å»ºæ¡†æ¶é©±åŠ¨ç¨‹åºå¯¹è±¡
     status = WdfDriverCreate(driver_object, register_path, &tWDF_Object_Attributes, &tWDF_Driver_Config, &tWDFDriver);
     if (!NT_SUCCESS(status))
     {
         TraceError(DBG_INIT, "WdfDriverCreate is error.");
+
+        WPP_CLEANUP(driver_object);
         return status;
     }
 
@@ -78,6 +83,8 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_object, IN PUNICODE_STRING registe
     if (!ptDriver_Context)
     {
         TraceError(DBG_INIT, "GetDriverContext is error.");
+
+        WPP_CLEANUP(driver_object);
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -87,22 +94,25 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_object, IN PUNICODE_STRING registe
     RtlInitAnsiString(&ansi, dataTimeStr);
     RtlAnsiStringToUnicodeString(&uni, &ansi, TRUE);
 
-    if (uni.Length + sizeof(WCHAR) <= sizeof ptDriver_Context->versions)        //·ÀÖ¹ÄÚ´æÔ½½ç
+    if (uni.Length + sizeof(WCHAR) <= sizeof ptDriver_Context->versions)        //é˜²æ­¢å†…å­˜è¶Šç•Œ
     {
         RtlCopyMemory(ptDriver_Context->versions, uni.Buffer, uni.Length + sizeof(WCHAR));
-
-        status = STATUS_INSUFFICIENT_RESOURCES;
-        TraceError(DBG_INIT, "uni.Length = %u£¬sizeof ptDriver_Context->versions = %u.", uni.Length, sizeof ptDriver_Context->versions);
     }
     else
     {
-        TraceVerbose(DBG_INIT, "DriverEntry is end.");
+        TraceError(DBG_INIT, "uni.Length = %uï¿½ï¿½sizeof ptDriver_Context->versions = %u.", uni.Length, sizeof ptDriver_Context->versions);
+
+        status = STATUS_INSUFFICIENT_RESOURCES;
     }
 
     RtlFreeUnicodeString(&uni);
 
     if (NT_SUCCESS(status))
         status = InitRegistryParameter(driver_object);
+
+    driver_object->DriverUnload = DriverUnload;
+
+    TraceVerbose(DBG_INIT, "DriverEntry is end.");
 
     return status;
 }

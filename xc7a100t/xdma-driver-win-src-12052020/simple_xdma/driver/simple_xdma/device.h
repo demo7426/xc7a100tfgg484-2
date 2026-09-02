@@ -39,6 +39,9 @@ typedef struct _DEVICE_CONTEXT
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, GetDeviceContext)    //通过 GetDeviceContext 函数即可获取设备上下文
 
+//初始化设备上下文
+VOID InitDevice_Context(PDEVICE_CONTEXT device_context);
+
 //添加设备
 NTSTATUS EVT_WDF_Driver_Device_Add(_In_ WDFDRIVER Driver, _Inout_ PWDFDEVICE_INIT DeviceInit);
 

@@ -1,16 +1,16 @@
-/*************************************************
+ï»¿/*************************************************
 Copyright (C), 2009-2012    , Level Chip Co., Ltd.
-ÎÄ¼şÃû:	device.h
-×÷  Õß:	Ç®Èñ      °æ±¾: V1.0     ĞÂ½¨ÈÕÆÚ: 2026.08.31
-Ãè  Êö: Éè±¸ÎÄ¼ş
-±¸  ×¢:
-ĞŞ¸Ä¼ÇÂ¼:
+æ–‡ä»¶å:	device.c
+ä½œ  è€…:	é’±é”      ç‰ˆæœ¬: V1.0     æ–°å»ºæ—¥æœŸ: 2026.08.31
+æ  è¿°: è®¾å¤‡æ–‡ä»¶
+å¤‡  æ³¨:
+ä¿®æ”¹è®°å½•:
 
-  1.  ÈÕÆÚ: 2026.08.31
-      ×÷Õß: Ç®Èñ
-      ÄÚÈİ:
-          1) ´ËÎªÄ£°åµÚÒ»¸ö°æ±¾£»
-      °æ±¾:V1.0
+  1.  æ—¥æœŸ: 2026.08.31
+      ä½œè€…: é’±é”
+      å†…å®¹:
+          1) æ­¤ä¸ºæ¨¡æ¿ç¬¬ä¸€ä¸ªç‰ˆæœ¬ï¼›
+      ç‰ˆæœ¬:V1.0
 
 *************************************************/
 
@@ -26,7 +26,23 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #include "device.tmh"
 #endif
 
-//Ó³ÉäËùÓĞµÄBar¼Ä´æÆ÷
+VOID InitDevice_Context(PDEVICE_CONTEXT device_context)
+{
+    if (!device_context)
+        return;
+
+    for (ULONG i = 0; i < sizeof(device_context->bar_infos) / sizeof(device_context->bar_infos[0]); i++)
+    {
+        device_context->bar_infos[i].physical_address.QuadPart = 0;
+        device_context->bar_infos[i].length = 0;
+
+        device_context->bar_infos[i].kernel_virtual_address = NULL;
+        device_context->bar_infos[i].user_virtual_address = NULL;
+        device_context->bar_infos[i].is_valid = FALSE;
+    }
+}
+
+//æ˜ å°„æ‰€æœ‰çš„Barå¯„å­˜å™¨
 static NTSTATUS MapBars(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _In_ WDFCMRESLIST ResourcesTranslated)
 {
     UNREFERENCED_PARAMETER(ResourcesTranslated);
@@ -37,9 +53,11 @@ static NTSTATUS MapBars(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _
 
     PDEVICE_CONTEXT ptDevice_Context = GetDeviceContext(Device);
 
-    const ULONG ulCmReourceCount = WdfCmResourceListGetCount(ResourcesRaw);     //×ÊÔ´ÊıÁ¿
+    const ULONG ulCmReourceCount = WdfCmResourceListGetCount(ResourcesRaw);     //èµ„æºæ•°é‡
 
-    ULONG ulBarNum = 0;                   //barµ±Ç°µÄÊıÁ¿
+    ULONG ulBarNum = 0;                   //barå½“å‰çš„æ•°é‡
+
+    InitDevice_Context(ptDevice_Context);
 
     for (ULONG index = 0; index < ulCmReourceCount; ++index)
     {
@@ -54,22 +72,29 @@ static NTSTATUS MapBars(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _
         {
         case CmResourceTypeMemory:
         {
-            ptDevice_Context->bar_infos[ulBarNum].length = ptResource->u.Memory.Length;
-            ptDevice_Context->bar_infos[ulBarNum].physical_address = ptResource->u.Memory.Start;
+            if (ulBarNum < sizeof(ptDevice_Context->bar_infos) / sizeof(ptDevice_Context->bar_infos[0]))
+            {
+                ptDevice_Context->bar_infos[ulBarNum].length = ptResource->u.Memory.Length;
+                ptDevice_Context->bar_infos[ulBarNum].physical_address = ptResource->u.Memory.Start;
 
-            ptDevice_Context->bar_infos[ulBarNum].kernel_virtual_address = MmMapIoSpace(ptResource->u.Memory.Start, ptResource->u.Memory.Length, MmNonCached);
-            if (ptDevice_Context->bar_infos[ulBarNum].kernel_virtual_address == NULL) {
-                TraceError(DBG_INIT, "MmMapIoSpace returned NULL! for BAR%u", ulBarNum);
-                return STATUS_DEVICE_CONFIGURATION_ERROR;
+                ptDevice_Context->bar_infos[ulBarNum].kernel_virtual_address = MmMapIoSpace(ptResource->u.Memory.Start, ptResource->u.Memory.Length, MmNonCached);
+                if (ptDevice_Context->bar_infos[ulBarNum].kernel_virtual_address == NULL) {
+                    TraceError(DBG_INIT, "MmMapIoSpace returned NULL! for BAR%u", ulBarNum);
+                    return STATUS_DEVICE_CONFIGURATION_ERROR;
+                }
+
+                ptDevice_Context->bar_infos[ulBarNum].is_valid = TRUE;
+
+                TraceInfo(DBG_INIT, "MM BAR %d (addr:0x%I64x, length:0x%x) mapped at 0x%08p",
+                    ulBarNum, ptResource->u.Memory.Start.QuadPart,
+                    ptResource->u.Memory.Length, ptDevice_Context->bar_infos[ulBarNum].kernel_virtual_address);
+
+                ulBarNum++;
             }
-
-            ptDevice_Context->bar_infos[ulBarNum].is_valid = TRUE;
-
-            TraceInfo(DBG_INIT, "MM BAR %d (addr:0x%lld, length:%u) mapped at 0x%08p",
-                ulBarNum, ptResource->u.Memory.Start.QuadPart,
-                ptResource->u.Memory.Length, ptDevice_Context->bar_infos[ulBarNum].kernel_virtual_address);
-
-            ulBarNum++;
+            else
+            {
+                TraceInfo(DBG_INIT, "MapBars ulBarNum = %u.", ulBarNum);
+            }
         }
             break;
         default:
@@ -85,9 +110,15 @@ static NTSTATUS MapBars(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _
 
 static NTSTATUS EVT_WDF_Device_Prepare_Hardware(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _In_ WDFCMRESLIST ResourcesTranslated)
 {
-    TraceInfo(DBG_INIT, "EVT_WDF_Device_Prepare_Hardware is enter.");
+    TraceVerbose(DBG_INIT, "EVT_WDF_Device_Prepare_Hardware is enter.");
 
-    return MapBars(Device, ResourcesRaw, ResourcesTranslated);
+    NTSTATUS status = STATUS_SUCCESS;
+
+    status = MapBars(Device, ResourcesRaw, ResourcesTranslated);
+
+    TraceVerbose(DBG_INIT, "EVT_WDF_Device_Prepare_Hardware is enter.");
+
+    return status;
 }
 
 static NTSTATUS EVT_WDF_Device_Relase_Hardware(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesTranslated)
@@ -136,13 +167,13 @@ NTSTATUS EVT_WDF_Driver_Device_Add(_In_ WDFDRIVER driver, _Inout_ PWDFDEVICE_INI
     WDF_IO_QUEUE_CONFIG tWDF_IO_Queue_Config = { 0 };
     WDFQUEUE tWDFQueue = { 0 };
 
-    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&tWDF_Object_Attributes, DEVICE_CONTEXT);       //Ôö¼ÓÉè±¸ÉÏÏÂÎÄ¶ÔÏóµÄ´´½¨ÊôĞÔ
+    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&tWDF_Object_Attributes, DEVICE_CONTEXT);       //å¢åŠ è®¾å¤‡ä¸Šä¸‹æ–‡å¯¹è±¡çš„åˆ›å»ºå±æ€§
     /*
-    WdfSynchronizationScopeDevice  ¡ú ¿ò¼Ü³ÖÓĞ WDFDEVICE ¹ØÁªµÄ spinlock
-    WdfSynchronizationScopeQueue   ¡ú ¿ò¼Ü³ÖÓĞ WDFQUEUE ¹ØÁªµÄ spinlock
-    WdfSynchronizationScopeNone    ¡ú ¿ò¼Ü²»°ïÄã¼ÓËø
+    WdfSynchronizationScopeDevice  â†’ æ¡†æ¶æŒæœ‰ WDFDEVICE å…³è”çš„ spinlock
+    WdfSynchronizationScopeQueue   â†’ æ¡†æ¶æŒæœ‰ WDFQUEUE å…³è”çš„ spinlock
+    WdfSynchronizationScopeNone    â†’ æ¡†æ¶ä¸å¸®ä½ åŠ é”
     */
-    tWDF_Object_Attributes.SynchronizationScope = WdfSynchronizationScopeNone;              //ÔÚ¶ÓÁĞÀïÃæ¼ÓËø¾Í¿ÉÒÔÁË       
+    tWDF_Object_Attributes.SynchronizationScope = WdfSynchronizationScopeNone;              //åœ¨é˜Ÿåˆ—é‡Œé¢åŠ é”å°±å¯ä»¥äº†       
 
     WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&tWDFPNPPowerCallBacks);
 
@@ -154,7 +185,7 @@ NTSTATUS EVT_WDF_Driver_Device_Add(_In_ WDFDRIVER driver, _Inout_ PWDFDEVICE_INI
 
     WdfDeviceInitSetIoInCallerContextCallback(device_init, EVT_WDF_IO_IN_Caller_Context);
 
-    //´´½¨Éè±¸ÎÄ¼ş
+    //åˆ›å»ºè®¾å¤‡æ–‡ä»¶
     status = WdfDeviceCreate(&device_init, &tWDF_Object_Attributes, &tWDFDevice);
     if (!NT_SUCCESS(status))
     {
@@ -162,7 +193,7 @@ NTSTATUS EVT_WDF_Driver_Device_Add(_In_ WDFDRIVER driver, _Inout_ PWDFDEVICE_INI
         return status;
     }
 
-    //±ØĞëÊ¹ÓÃWDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUEº¯Êı³õÊ¼»¯£¬·ñÔò»áµ¼ÖÂÓ¦ÓÃ²ãIOµ÷ÓÃÊ§°Ü
+    //å¿…é¡»ä½¿ç”¨WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUEå‡½æ•°åˆå§‹åŒ–ï¼Œå¦åˆ™ä¼šå¯¼è‡´åº”ç”¨å±‚IOè°ƒç”¨å¤±è´¥
     WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(&tWDF_IO_Queue_Config, WdfIoQueueDispatchSequential);
     tWDF_IO_Queue_Config.EvtIoDeviceControl = EVT_WDF_IO_Queue_IO_Device_Control;
 
