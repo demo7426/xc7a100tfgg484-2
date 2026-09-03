@@ -19,6 +19,7 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 
 #include "trace.h"
 #include "queue.h"
+#include "file.h"
 
 #ifdef DBG
 // The trace message header (.tmh) file must be included in a source file before any WPP macro 
@@ -37,7 +38,6 @@ VOID InitDevice_Context(PDEVICE_CONTEXT device_context)
         device_context->bar_infos[i].length = 0;
 
         device_context->bar_infos[i].kernel_virtual_address = NULL;
-        device_context->bar_infos[i].user_virtual_address = NULL;
         device_context->bar_infos[i].is_valid = FALSE;
     }
 }
@@ -142,16 +142,6 @@ static NTSTATUS EVT_WDF_Device_Relase_Hardware(_In_ WDFDEVICE Device, _In_ WDFCM
     return STATUS_SUCCESS;
 }
 
-static VOID EVT_WDF_IO_IN_Caller_Context(_In_ WDFDEVICE Device, _In_ WDFREQUEST Request)
-{
-    UNREFERENCED_PARAMETER(Device);
-    UNREFERENCED_PARAMETER(Request);
-
-    TraceInfo(DBG_INIT, "EVT_WDF_IO_IN_Caller_Context is enter.");
-
-    return;
-}
-
 NTSTATUS EVT_WDF_Driver_Device_Add(_In_ WDFDRIVER driver, _Inout_ PWDFDEVICE_INIT device_init)
 {
     UNREFERENCED_PARAMETER(driver);
@@ -167,7 +157,21 @@ NTSTATUS EVT_WDF_Driver_Device_Add(_In_ WDFDRIVER driver, _Inout_ PWDFDEVICE_INI
     WDF_IO_QUEUE_CONFIG tWDF_IO_Queue_Config = { 0 };
     WDFQUEUE tWDFQueue = { 0 };
 
+    WdfDeviceInitSetIoType(device_init, WdfDeviceIoDirect);     //设置 WDFDEVICE_INIT 的IO方式;主要是ReadFile，WriteFile
+
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&tWDF_Object_Attributes, DEVICE_CONTEXT);       //增加设备上下文对象的创建属性
+    
+
+    // Register file object call-backs
+    WDF_OBJECT_ATTRIBUTES fileAttributes;
+    WDF_FILEOBJECT_CONFIG fileConfig;
+    WDF_FILEOBJECT_CONFIG_INIT(&fileConfig, EvtDeviceFileCreate, EvtFileClose, EvtFileCleanup);
+    WDF_OBJECT_ATTRIBUTES_INIT(&fileAttributes);
+    fileAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
+    WDF_OBJECT_ATTRIBUTES_SET_CONTEXT_TYPE(&fileAttributes, FILE_CONTEXT);
+    WdfDeviceInitSetFileObjectConfig(device_init, &fileConfig, &fileAttributes);
+    
+    
     /*
     WdfSynchronizationScopeDevice  → 框架持有 WDFDEVICE 关联的 spinlock
     WdfSynchronizationScopeQueue   → 框架持有 WDFQUEUE 关联的 spinlock

@@ -20,13 +20,38 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #include <ntddk.h>
 #include <wdf.h>
 
+#include "simple_xdma_public.h"
+
+enum FILE_TYPE
+{
+    FILE_TYPE_NONE = 0,
+
+    FILE_TYPE_USER = 1,
+    FILE_TYPE_CONTROL,
+    FILE_TYPE_BYPASS,
+
+    FILE_TYPE_H2C,
+    FILE_TYPE_C2H,
+};
+
 typedef struct _FILE_CONTEXT
 {
-    DWORD32 reserve;        //预留
+    enum FILE_TYPE file_type;
+    const WCHAR* file_name;
+    ULONG channel;
+
+    XDMA_BAR_INFO bar_infos[BAR_MAX_NUM];         //bar映射后的用户态虚拟地址
+    PMDL mdls[BAR_MAX_NUM];
 }FILE_CONTEXT, * PFILE_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(FILE_CONTEXT, GetFileContext)
 
+VOID EVT_WDF_IO_IN_Caller_Context(_In_ WDFDEVICE Device, _In_ WDFREQUEST Request);
 
+VOID EvtDeviceFileCreate(_In_ WDFDEVICE Device, _In_ WDFREQUEST Request, _In_ WDFFILEOBJECT FileObject);
+
+VOID EvtFileClose(_In_ WDFFILEOBJECT FileObject);
+
+VOID EvtFileCleanup(_In_ WDFFILEOBJECT FileObject);
 
 #endif // !__FILE_H__

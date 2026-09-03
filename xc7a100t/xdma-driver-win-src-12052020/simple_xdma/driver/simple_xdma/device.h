@@ -17,7 +17,11 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #ifndef __DEVICE_H__
 #define __DEVICE_H__
 
-#include "public.h"
+#include <ntddk.h>
+#include <wdf.h>
+#include <wdm.h>
+
+#include "simple_xdma_public.h"
 
 typedef struct _BAR_INFO
 {
@@ -25,7 +29,6 @@ typedef struct _BAR_INFO
     ULONG length;                       //长度
 
     PVOID kernel_virtual_address;       //映射后的内核态虚拟地址
-    PVOID user_virtual_address;         //映射后的用户态虚拟地址
 
     BOOLEAN is_valid;                   //该Bar当前是否有效；TRUE--有效；False--无效
 }BAR_INFO, *PBAR_INFO;

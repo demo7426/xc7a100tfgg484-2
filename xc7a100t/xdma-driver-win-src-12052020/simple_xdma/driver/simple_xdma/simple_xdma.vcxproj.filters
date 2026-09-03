@@ -38,7 +38,7 @@
     <ClInclude Include="file.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="public.h">
+    <ClInclude Include="simple_xdma_public.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

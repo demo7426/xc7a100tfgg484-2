@@ -73,6 +73,7 @@
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <OutDir>$(SolutionDir)build\$(Platform)\$(ProjectName)\$(ConfigurationName)\</OutDir>
     <IntDir>$(SolutionDir)build_tmp\$(ProjectName)\$(Platform)\$(ConfigurationName)\</IntDir>
+    <EnableInf2cat>true</EnableInf2cat>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
@@ -93,6 +94,8 @@
     </ClCompile>
     <Inf>
       <TimeStamp>1.0.0.0</TimeStamp>
+      <SpecifyDriverVerDirectiveVersion>true</SpecifyDriverVerDirectiveVersion>
+      <SpecifyArchitecture>true</SpecifyArchitecture>
     </Inf>
     <Inf2Cat>
       <DriverInstallArchitecture>X64</DriverInstallArchitecture>
@@ -158,7 +161,7 @@
     <ClInclude Include="device.h" />
     <ClInclude Include="driver.h" />
     <ClInclude Include="file.h" />
-    <ClInclude Include="public.h" />
+    <ClInclude Include="simple_xdma_public.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="trace.h" />
   </ItemGroup>
