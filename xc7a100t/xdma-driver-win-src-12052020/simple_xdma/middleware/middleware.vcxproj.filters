@@ -27,13 +27,16 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\xdma\hzcc_middleware_xdma.cpp">
+    <ClCompile Include="src\xdma\middleware_xdma.cpp">
       <Filter>源文件\xdma</Filter>
     </ClCompile>
-    <ClCompile Include="src\xdma\hzcc_middleware_xdma_factory.cpp">
+    <ClCompile Include="src\xdma\middleware_xdma_factory.cpp">
       <Filter>源文件\xdma</Filter>
     </ClCompile>
-    <ClCompile Include="src\xdma\hzcc_middleware_xdma_xilinx.cpp">
+    <ClCompile Include="src\xdma\middleware_xdma_xilinx.cpp">
+      <Filter>源文件\xdma</Filter>
+    </ClCompile>
+    <ClCompile Include="src\xdma\middleware_xdma_bar.cpp">
       <Filter>源文件\xdma</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,14 +47,20 @@
     <ClInclude Include="include\singleton.h">
       <Filter>头文件\include</Filter>
     </ClInclude>
-    <ClInclude Include="include\xdma\hzcc_middleware_xdma.h">
+    <ClInclude Include="include\xdma\middleware_xdma.h">
       <Filter>头文件\include\xdma</Filter>
     </ClInclude>
-    <ClInclude Include="include\xdma\hzcc_middleware_xdma_factory.h">
+    <ClInclude Include="include\xdma\middleware_xdma_factory.h">
       <Filter>头文件\include\xdma</Filter>
     </ClInclude>
-    <ClInclude Include="include\xdma\hzcc_middleware_xdma_xilinx.h">
+    <ClInclude Include="include\xdma\middleware_xdma_xilinx.h">
       <Filter>头文件\include\xdma</Filter>
+    </ClInclude>
+    <ClInclude Include="include\xdma\middleware_xdma_bar.h">
+      <Filter>头文件\include\xdma</Filter>
+    </ClInclude>
+    <ClInclude Include="include\simple_xdma_public.h">
+      <Filter>头文件\include</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

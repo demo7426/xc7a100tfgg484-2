@@ -49,6 +49,7 @@ static VOID GetFileType(_In_ PUNICODE_STRING file_name, _Out_ PFILE_CONTEXT file
 
     };
 
+    file_context->file_type = FILE_TYPE_NONE;
 
     for (ULONG i = 0; i < sizeof(tFileName_FileType_Infos) / sizeof(tFileName_FileType_Infos[0]); i++)
     {
@@ -58,9 +59,6 @@ static VOID GetFileType(_In_ PUNICODE_STRING file_name, _Out_ PFILE_CONTEXT file
         }
 
     }
-
-    file_context->file_type = FILE_TYPE_NONE;
-
 }
 
 static NTSTATUS IoCtrlMapBarsToUser(_In_ WDFDEVICE Device, _In_ WDFREQUEST Request, _In_ ULONG barIndex)
@@ -80,20 +78,31 @@ static NTSTATUS IoCtrlMapBarsToUser(_In_ WDFDEVICE Device, _In_ WDFREQUEST Reque
     }
 
     if (buffer == NULL) {
-        TraceError(DBG_IO, "Buffer is NULL");
+        TraceError(DBG_IO, "%!FUNC!: Buffer is NULL");
         return STATUS_NOT_SUPPORTED;
     }
 
     if (totalLength != sizeof(XDMA_BAR_INFO)) {
-        TraceError(DBG_IO, "Input data not equal to XDMA Keyhole Struct");
+        TraceError(DBG_IO, "%!FUNC!: Input data not equal to XDMA Keyhole Struct");
         return STATUS_NOT_SUPPORTED;
     }
 
     xbar_info = (PXDMA_BAR_INFO)buffer;
 
+    if (barIndex >= sizeof ptFile_Context->mdls / sizeof ptFile_Context->mdls[0])
+    {
+        TraceError(DBG_IO, "%!FUNC!: barIndex = %u", barIndex);
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    if (!ptDevice_Context->bar_infos[barIndex].is_valid) {
+        TraceError(DBG_IO, "%!FUNC!: BAR %u is not valid", barIndex);
+        return STATUS_DEVICE_NOT_READY;
+    }
+
     ptFile_Context->mdls[barIndex] = IoAllocateMdl(ptDevice_Context->bar_infos[barIndex].kernel_virtual_address, ptDevice_Context->bar_infos[barIndex].length, FALSE, FALSE, NULL);
     if (!ptFile_Context->mdls[barIndex]) {
-        TraceError(DBG_IO, "Bad MDL allocation");
+        TraceError(DBG_IO, "%!FUNC!: Bad MDL allocation");
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
@@ -157,13 +166,13 @@ VOID EVT_WDF_IO_IN_Caller_Context(_In_ WDFDEVICE Device, _In_ WDFREQUEST Request
         switch (ptFile_Context->file_type)
         {
         case FILE_TYPE_USER:
-            barIndex = 1;
+            barIndex = 0;
             break;
         case FILE_TYPE_CONTROL:
-            barIndex = 2;
+            barIndex = 1;
             break;
         case FILE_TYPE_BYPASS:
-            barIndex = 3;
+            barIndex = 2;
             break;
         default:
             TraceError(DBG_INIT, "%!FUNC! failed: file_type = %d", (LONG)ptFile_Context->file_type);
@@ -173,7 +182,7 @@ VOID EVT_WDF_IO_IN_Caller_Context(_In_ WDFDEVICE Device, _In_ WDFREQUEST Request
         //直接在此处处理用户态的 irp 请求
         status = IoCtrlMapBarsToUser(Device, Request, barIndex);        //必须在此处映射，因为当前还处于用户态的进程上下文中
 
-        WdfRequestComplete(Request, status);
+        WdfRequestCompleteWithInformation(Request, status, sizeof(XDMA_BAR_INFO));
         
         return;
     }
@@ -234,6 +243,25 @@ VOID EvtDeviceFileCreate(_In_ WDFDEVICE Device, _In_ WDFREQUEST Request, _In_ WD
 
 VOID EvtFileClose(_In_ WDFFILEOBJECT FileObject)
 {
+    PFILE_CONTEXT ptFile_Context = GetFileContext(FileObject);
+    
+    //防止内存越界
+    C_ASSERT(sizeof(ptFile_Context->bar_infos) / sizeof(ptFile_Context->bar_infos[0]) == sizeof(ptFile_Context->mdls) / sizeof(ptFile_Context->mdls[0]));
+    
+    for (size_t i = 0; i < sizeof(ptFile_Context->bar_infos) / sizeof(ptFile_Context->bar_infos[0]); i++)
+    {
+        if (ptFile_Context->bar_infos[i].bar_user_virtual_address && ptFile_Context->mdls[i])
+        {
+            MmUnmapLockedPages(ptFile_Context->bar_infos[i].bar_user_virtual_address, ptFile_Context->mdls[i]);
+            IoFreeMdl(ptFile_Context->mdls[i]);
+
+            ptFile_Context->bar_infos[i].bar_user_virtual_address = NULL;
+            ptFile_Context->bar_infos[i].bar_length = 0;
+            ptFile_Context->mdls[i] = NULL;
+        }
+
+    }
+
     UNREFERENCED_PARAMETER(FileObject);
     return;
 }

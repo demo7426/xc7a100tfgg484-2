@@ -1,6 +1,6 @@
 /*************************************************
 Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
-文件名:	hzcc_middleware_xdma_xilinx.h
+文件名:	middleware_xdma_xilinx.h
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.23
 描  述: 实现xilinx官方的xdma ip核的读写数据性能测试
 备  注:
@@ -18,36 +18,69 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 #include <Windows.h>
 #include <SetupAPI.h>
 
-#include "hzcc_middleware_xdma_xilinx.h"
+#include "middleware_xdma_xilinx.h"
 #include "debug.h"
+#include "simple_xdma_public.h"
 
 namespace hzcc
 {
     namespace middleware
     {
-#define MAX_BUF_SIZE (8 * 1024 * 1024)      //单次不能超过 8MB，超出驱动自动分片
-#define ALIGNED_SIZE 256                    //内存对其大小
-
-        // 74c7e4a9-6d5d-4a70-bc0d-20691dff9e9d
-        DEFINE_GUID(GUID_DEVINTERFACE_XDMA,
-            0x74c7e4a9, 0x6d5d, 0x4a70, 0xbc, 0x0d, 0x20, 0x69, 0x1d, 0xff, 0x9e, 0x9d);
+        #define MAX_BUF_SIZE (8 * 1024 * 1024)      //单次不能超过 8MB，超出驱动自动分片
+        #define ALIGNED_SIZE 256                    //内存对其大小
 
         int CXDMA_Xilinx::Init()
         {
-            auto unDevNum = this->FindDevice(GUID_DEVINTERFACE_XDMA);
+            auto unDevNum = CXDMA_Base::Init();
+           
+            m_vecC2H_Path.clear();
+            m_vecH2C_Path.clear();
 
-            DEBUG(DEBUG_LEVEL_INFO, "Found %u XDma device.", unDevNum);
-
-            for (size_t i = 0; i < m_vecBasePath.size(); i++)
+            if (unDevNum >= 1)
             {
-                DEBUG(DEBUG_LEVEL_INFO, "i = %llu, DevicePath = %ws.", i, m_vecBasePath[i].c_str());
+                m_vecC2H_Path.push_back(m_vecBasePath.back() + XDMA_FILE_H2C_0);
+                m_vecH2C_Path.push_back(m_vecBasePath.back() + XDMA_FILE_C2H_0);
             }
+
+#if 0
+            for (int i = 0; i < m_vecBasePath.size(); i++)
+            {
+                switch (i)
+                {
+                case 0:
+                    m_vecC2H_Path.push_back(m_vecBasePath[i] + XDMA_FILE_H2C_0);
+                    m_vecH2C_Path.push_back(m_vecBasePath[i] + XDMA_FILE_C2H_0);
+                    break;
+                case 1:
+                    m_vecC2H_Path.push_back(m_vecBasePath[i] + XDMA_FILE_H2C_1);
+                    m_vecH2C_Path.push_back(m_vecBasePath[i] + XDMA_FILE_C2H_1);
+                    break;
+                case 2:
+                    m_vecC2H_Path.push_back(m_vecBasePath[i] + XDMA_FILE_H2C_2);
+                    m_vecH2C_Path.push_back(m_vecBasePath[i] + XDMA_FILE_C2H_2);
+                    break;
+                case 3:
+                    m_vecC2H_Path.push_back(m_vecBasePath[i] + XDMA_FILE_H2C_3);
+                    m_vecH2C_Path.push_back(m_vecBasePath[i] + XDMA_FILE_C2H_3);
+                    break;
+                default:
+                    break;
+                }
+
+            }
+#endif
 
             return unDevNum;
         }
 
         int CXDMA_Xilinx::Exit()
         {
+            if (!m_vecC2H_Path.empty())
+                m_vecC2H_Path.clear();
+
+            if (!m_vecH2C_Path.empty())
+                m_vecH2C_Path.clear();
+
             return 0;
         }
 

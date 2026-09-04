@@ -19,8 +19,8 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 #include <chrono>
 
 #include "debug.h"
-#include "hzcc_middleware_xdma.h"
-#include "hzcc_middleware_xdma_factory.h"
+#include "middleware_xdma.h"
+#include "middleware_xdma_factory.h"
 
 enum class _USER_CMD_TYPE: int32_t
 {
@@ -33,6 +33,8 @@ enum class _USER_CMD_TYPE: int32_t
 	H2C_SPEED_TEST,			//h2c速度测试
 	C2H_SPEED_TEST,			//c2h速度测试
 	FULL_DUPLEX_TEST,		//全双工测试
+
+	BYPASS_TEST,			//bypass测试
 };
 
 int main(int argc, char* argv[])
@@ -41,31 +43,53 @@ int main(int argc, char* argv[])
 	{
 		_USER_CMD_TYPE eCmd = _USER_CMD_TYPE::H2C_SPEED_TEST;
 
-		if(argc > 1)
+		if(argc == 2)
 			eCmd = static_cast<_USER_CMD_TYPE>(std::atoi(argv[1]));
+		else
+		{
+			DEBUG(DEBUG_LEVEL_INFO, "Please input: test_app cmd.");
+			return EXIT_SUCCESS;
+		}
 
-		hzcc::middleware::CXDMA_Base* pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::XILINX);
-		DEBUG(DEBUG_LEVEL_INFO, "");
+		hzcc::middleware::CXDMA_Base* pcXDMA_Test = nullptr;
 
 		switch (eCmd)
 		{
 		case _USER_CMD_TYPE::C2H_TEST:
+			pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::XILINX);
+
+			pcXDMA_Test->Init();
 			pcXDMA_Test->StartC2HTest();
 			break;
 		case _USER_CMD_TYPE::C2H_ASYNC_TEST:
+			pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::XILINX);
+
+			pcXDMA_Test->Init();
 			pcXDMA_Test->StartC2H_AsyncTest();
 			break;
 		case _USER_CMD_TYPE::H2C_TEST:
+			pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::XILINX);
+
+			pcXDMA_Test->Init();
 			pcXDMA_Test->StartH2CTest();
 			break;
 		case _USER_CMD_TYPE::H2C_ASYNC_TEST:
+			pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::XILINX);
+
+			pcXDMA_Test->Init();
 			pcXDMA_Test->StartH2C_AsyncTest();
 			break;
 		case _USER_CMD_TYPE::LOOP_TEST:
+			pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::XILINX);
+
+			pcXDMA_Test->Init();
 			pcXDMA_Test->LoopTest();
 			break;
 		case _USER_CMD_TYPE::H2C_SPEED_TEST:		
 		{
+			pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::XILINX);
+
+			pcXDMA_Test->Init();
 			pcXDMA_Test->StartH2C_SpeedTest(0);
 
 			while (1)
@@ -77,7 +101,7 @@ int main(int argc, char* argv[])
 					auto vecSpeed = opt_rtn.value();
 					for (size_t i = 0; i < vecSpeed.size(); i++)
 					{
-						DEBUG(DEBUG_LEVEL_INFO, "H2C speed = %.06f MB/s.", vecSpeed[i]);
+						DEBUG(DEBUG_LEVEL_INFO, "H2C speed = %.06f MB/s.", vecSpeed[i].Speed);
 					}
 				}
 
@@ -89,6 +113,9 @@ int main(int argc, char* argv[])
 		break;
 		case _USER_CMD_TYPE::C2H_SPEED_TEST:		
 		{
+			pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::XILINX);
+
+			pcXDMA_Test->Init();
 			pcXDMA_Test->StartC2H_SpeedTest(0);
 
 			while (1)
@@ -100,7 +127,7 @@ int main(int argc, char* argv[])
 					auto vecSpeed = opt_rtn.value();
 					for (size_t i = 0; i < vecSpeed.size(); i++)
 					{
-						DEBUG(DEBUG_LEVEL_INFO, "C2H speed = %.06f MB/s.", vecSpeed[i]);
+						DEBUG(DEBUG_LEVEL_INFO, "C2H speed = %.06f MB/s.", vecSpeed[i].Speed);
 					}
 				}
 
@@ -112,6 +139,9 @@ int main(int argc, char* argv[])
 		break;
 		case _USER_CMD_TYPE::FULL_DUPLEX_TEST:
 		{
+			pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::XILINX);
+
+			pcXDMA_Test->Init();
 			pcXDMA_Test->StartH2C_SpeedTest(0);
 			pcXDMA_Test->StartC2H_SpeedTest(0);
 
@@ -124,7 +154,7 @@ int main(int argc, char* argv[])
 					auto vecSpeed = opt_rtn.value();
 					for (size_t i = 0; i < vecSpeed.size(); i++)
 					{
-						DEBUG(DEBUG_LEVEL_INFO, "H2C speed = %.06f MB/s.", vecSpeed[i]);
+						DEBUG(DEBUG_LEVEL_INFO, "H2C speed = %.06f MB/s.", vecSpeed[i].Speed);
 					}
 				}
 
@@ -135,7 +165,7 @@ int main(int argc, char* argv[])
 					auto vecSpeed = opt_rtn.value();
 					for (size_t i = 0; i < vecSpeed.size(); i++)
 					{
-						DEBUG(DEBUG_LEVEL_INFO, "C2H speed = %.06f MB/s.", vecSpeed[i]);
+						DEBUG(DEBUG_LEVEL_INFO, "C2H speed = %.06f MB/s.", vecSpeed[i].Speed);
 					}
 				}
 
@@ -146,10 +176,25 @@ int main(int argc, char* argv[])
 			pcXDMA_Test->StopH2C_SpeedTest();
 		}
 		break;
+		case _USER_CMD_TYPE::BYPASS_TEST:
+		{
+			pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::BAR);
+			
+			pcXDMA_Test->Init();
+			pcXDMA_Test->BarReadWrite_Test();
+		}
+		break;
 		default:
 			break;
 		}
 
+		pcXDMA_Test->Exit();
+
+		if (pcXDMA_Test)
+		{
+			delete pcXDMA_Test;
+			pcXDMA_Test = nullptr;
+		}
 	}
 	catch (const std::exception& e)
 	{

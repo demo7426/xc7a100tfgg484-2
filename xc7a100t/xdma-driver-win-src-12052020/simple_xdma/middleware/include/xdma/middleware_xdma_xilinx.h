@@ -1,6 +1,6 @@
 /*************************************************
 Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
-文件名:	hzcc_middleware_xdma_xilinx.h
+文件名:	middleware_xdma_xilinx.h
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.23
 描  述: 实现xilinx官方的xdma ip核的读写数据性能测试
 备  注:
@@ -16,7 +16,7 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 
 #pragma once
 
-#include "hzcc_middleware_xdma.h"
+#include "middleware_xdma.h"
 
 namespace hzcc
 {
@@ -132,6 +132,9 @@ namespace hzcc
 
 
 		private:
+			std::vector<std::basic_string<TCHAR>> m_vecC2H_Path;		//c2h设备接口
+			std::vector<std::basic_string<TCHAR>> m_vecH2C_Path;		//h2c设备接口
+
 			std::vector<std::thread*> m_vecThH2C;		//h2c线程对象
 			std::vector<int8_t> m_vecH2CIsRun;
 

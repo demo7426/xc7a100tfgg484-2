@@ -30,7 +30,7 @@ protected:
 public:
 	~CSingleton()		//保证子类可以正常析构到父类
 	{
-		std::cout << __FUNCTION__ << std::endl;
+		//std::cout << __FUNCTION__ << std::endl;
 	}
 
 	/// <summary>

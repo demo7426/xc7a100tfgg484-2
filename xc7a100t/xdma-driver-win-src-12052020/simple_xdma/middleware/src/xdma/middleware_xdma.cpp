@@ -1,6 +1,6 @@
 /*************************************************
 Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
-文件名:	hzcc_middleware_xdma.h
+文件名:	middleware_xdma.h
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.10
 描  述: 实现xdma ip核的读写数据性能测试
 备  注:
@@ -19,7 +19,8 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 
 #include "debug.h"
 
-#include "hzcc_middleware_xdma.h"
+#include "middleware_xdma.h"
+#include "simple_xdma_public.h"
 
 namespace hzcc
 {
@@ -28,6 +29,28 @@ namespace hzcc
         CXDMA_Base::~CXDMA_Base()
         {
 
+        }
+
+        int CXDMA_Base::Init()
+        {
+            auto unDevNum = this->FindDevice(GUID_DEVINTERFACE_XDMA);
+
+            DEBUG(DEBUG_LEVEL_INFO, "Found %u XDma device.", unDevNum);
+
+            for (size_t i = 0; i < m_vecBasePath.size(); i++)
+            {
+                DEBUG(DEBUG_LEVEL_INFO, "i = %llu, DevicePath = %ws.", i, m_vecBasePath[i].c_str());
+            }
+
+            return unDevNum;
+        }
+
+        int CXDMA_Base::Exit()
+        {
+            if(!m_vecBasePath.empty())
+                m_vecBasePath.clear();
+
+            return 0;
         }
 
 
@@ -87,6 +110,11 @@ namespace hzcc
             return 0;
         }
 
+        int CXDMA_Base::BarReadWrite_Test()
+        {
+            return 0;
+        }
+
         unsigned int CXDMA_Base::FindDevice(GUID tGuid)
         {
             HDEVINFO hDevInfo = SetupDiGetClassDevs((LPGUID)&tGuid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE); //返回 设备信息集 的句柄，其中包含本地计算机请求的设备信息元素。
@@ -102,8 +130,6 @@ namespace hzcc
             DWORD dwIndex = 0;
 
             m_vecBasePath.clear();
-            m_vecC2H_Path.clear();
-            m_vecH2C_Path.clear();
 
             //SetupDiEnumDeviceInterfaces 函数枚举包含在设备信息集中的设备接口
             for (dwIndex = 0; SetupDiEnumDeviceInterfaces(hDevInfo, NULL, (LPGUID)&tGuid, dwIndex, &tSP_DEVICE_INTERFACE_DATA); dwIndex++)
@@ -138,8 +164,6 @@ namespace hzcc
                 }
 
                 m_vecBasePath.push_back(std::wstring(ptSP_DEVICE_INTERFACE_DETAIL_DATA->DevicePath));
-                m_vecC2H_Path.push_back(m_vecBasePath.back() + L"\\c2h_" + std::to_wstring(m_vecC2H_Path.size()));
-                m_vecH2C_Path.push_back(m_vecBasePath.back() + L"\\h2c_" + std::to_wstring(m_vecH2C_Path.size()));
 
                 HeapFree(GetProcessHeap(), 0, ptSP_DEVICE_INTERFACE_DETAIL_DATA);
                 ptSP_DEVICE_INTERFACE_DETAIL_DATA = NULL;

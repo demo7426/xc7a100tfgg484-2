@@ -1,6 +1,6 @@
 /*************************************************
 Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
-文件名:	hzcc_middleware_xdma.h
+文件名:	middleware_xdma.h
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.10
 描  述: 实现xdma ip核的读写数据性能测试
 备  注:
@@ -48,13 +48,13 @@ namespace hzcc
 			/// 初始化
 			/// </summary>
 			/// <returns></returns>
-			virtual int Init() = 0;
+			virtual int Init();
 
 			/// <summary>
 			/// 正常退出
 			/// </summary>
 			/// <returns></returns>
-			virtual int Exit() = 0;
+			virtual int Exit();
 
 			/// <summary>
 			/// 开始h2c数据测试
@@ -126,10 +126,15 @@ namespace hzcc
 			/// <returns></returns>
 			virtual int StopC2H_SpeedTest();
 
+		public:
+			/// <summary>
+			/// bar读写测试
+			/// </summary>
+			/// <returns></returns>
+			virtual int BarReadWrite_Test();
+
 		protected:
 			std::vector<std::basic_string<TCHAR>> m_vecBasePath;		//设备接口
-			std::vector<std::basic_string<TCHAR>> m_vecC2H_Path;		//c2h设备接口
-			std::vector<std::basic_string<TCHAR>> m_vecH2C_Path;		//h2c设备接口
 
 		protected:
 			/// <summary>

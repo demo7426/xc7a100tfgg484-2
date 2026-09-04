@@ -1,6 +1,6 @@
 /*************************************************
 Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
-文件名:	hzcc_middleware_xdma_factory.h
+文件名:	middleware_xdma_factory.h
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.23
 描  述: 实现xdma ip核工厂
 备  注:
@@ -16,7 +16,7 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 
 #pragma once
 
-#include "hzcc_middleware_xdma.h"
+#include "middleware_xdma.h"
 #include "singleton.h"
 
 namespace hzcc 
@@ -27,7 +27,7 @@ namespace hzcc
 		{
 			NONE = 0,
 			XILINX,			//xilinx xdma ip类型
-
+			BAR
 		};
 
 		class LCB_DLLEXPORT CXDMA_Base_Factory : public CSingleton<CXDMA_Base_Factory>

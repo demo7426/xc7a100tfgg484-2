@@ -20,16 +20,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\xdma\hzcc_middleware_xdma.cpp" />
-    <ClCompile Include="src\xdma\hzcc_middleware_xdma_factory.cpp" />
-    <ClCompile Include="src\xdma\hzcc_middleware_xdma_xilinx.cpp" />
+    <ClCompile Include="src\xdma\middleware_xdma.cpp" />
+    <ClCompile Include="src\xdma\middleware_xdma_bar.cpp" />
+    <ClCompile Include="src\xdma\middleware_xdma_factory.cpp" />
+    <ClCompile Include="src\xdma\middleware_xdma_xilinx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\debug.h" />
+    <ClInclude Include="include\simple_xdma_public.h" />
     <ClInclude Include="include\singleton.h" />
-    <ClInclude Include="include\xdma\hzcc_middleware_xdma.h" />
-    <ClInclude Include="include\xdma\hzcc_middleware_xdma_factory.h" />
-    <ClInclude Include="include\xdma\hzcc_middleware_xdma_xilinx.h" />
+    <ClInclude Include="include\xdma\middleware_xdma.h" />
+    <ClInclude Include="include\xdma\middleware_xdma_bar.h" />
+    <ClInclude Include="include\xdma\middleware_xdma_factory.h" />
+    <ClInclude Include="include\xdma\middleware_xdma_xilinx.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -53,7 +56,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>

@@ -1,6 +1,6 @@
 /*************************************************
 Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
-文件名:	hzcc_middleware_xdma_factory.cpp
+文件名:	middleware_xdma_factory.cpp
 作  者:	钱锐      版本: V1.0     新建日期: 2026.08.23
 描  述: 实现xdma ip核工厂
 备  注:
@@ -14,8 +14,9 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 
 *************************************************/
 
-#include "hzcc_middleware_xdma_factory.h"
-#include "hzcc_middleware_xdma_xilinx.h"
+#include "middleware_xdma_factory.h"
+#include "middleware_xdma_xilinx.h"
+#include "middleware_xdma_bar.h"
 
 namespace hzcc
 {
@@ -31,6 +32,9 @@ namespace hzcc
                 break;
             case hzcc::middleware::XILINX:
                 pCXDMA_Test_Base = new CXDMA_Xilinx;
+                break;
+            case hzcc::middleware::BAR:
+                pCXDMA_Test_Base = new CXDMA_Bar;
                 break;
             default:
                 break;
