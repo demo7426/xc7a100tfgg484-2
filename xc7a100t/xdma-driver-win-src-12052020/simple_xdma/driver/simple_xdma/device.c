@@ -14,12 +14,12 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 
 *************************************************/
 
-
 #include "device.h"
 
 #include "trace.h"
 #include "queue.h"
 #include "file.h"
+#include "wdmguid.h"
 
 #ifdef DBG
 // The trace message header (.tmh) file must be included in a source file before any WPP macro 
@@ -42,6 +42,71 @@ VOID InitDevice_Context(PDEVICE_CONTEXT device_context)
     }
 }
 
+//获取真实的bar索引
+static NTSTATUS GetRealBarIndex(IN WDFDEVICE wdfDevice, PHYSICAL_ADDRESS start, OUT PULONG bar_index) {
+
+    BUS_INTERFACE_STANDARD pciBus = { 0 };
+    NTSTATUS status = WdfFdoQueryForInterface(wdfDevice, &GUID_BUS_INTERFACE_STANDARD,
+        (PINTERFACE)&pciBus, sizeof(BUS_INTERFACE_STANDARD), 1, NULL);
+    if (!NT_SUCCESS(status)) {
+        return status;
+    }
+
+    PCI_COMMON_HEADER pciHeader = { 0 };
+    ULONG bytesRead = pciBus.GetBusData(pciBus.Context, PCI_WHICHSPACE_CONFIG, &pciHeader, 0, PCI_COMMON_HDR_LENGTH);
+    if (bytesRead != (ULONG)PCI_COMMON_HDR_LENGTH) {
+        return STATUS_INVALID_DEVICE_REQUEST;
+    }
+
+    status = STATUS_INVALID_DEVICE_REQUEST;
+
+    for (ULONG i = 0; i < PCI_TYPE0_ADDRESSES; i++) {
+        ULONG barVal = pciHeader.u.type0.BaseAddresses[i];
+        if (barVal == 0) {
+            continue;
+        }
+        if (barVal & 0x1) {
+            continue;
+        }
+        BOOLEAN is64bit = (((barVal >> 1) & 0x3) == 0x2); // bits[2:1]==10
+        BOOLEAN prefetchable = (barVal & 0x8) ? TRUE : FALSE;
+
+        TraceInfo(DBG_INIT, "%s, bar[%u] raw=0x%x, addr=0x%x, %s-bit%s",
+            __func__, i, barVal, barVal & 0xFFFFFFF0,
+            is64bit ? "64" : "32",
+            prefetchable ? ", prefetchable" : ", non-prefetchable");
+
+        PHYSICAL_ADDRESS bar_addr = { .QuadPart = 0 };
+
+        if (is64bit) {
+            if (i + 1 >= PCI_TYPE0_ADDRESSES)       //防止内存越界
+                break;
+
+            ULONG bar_low = barVal & 0xFFFFFFF0;
+            ULONG bar_high = pciHeader.u.type0.BaseAddresses[i + 1];
+
+            bar_addr.QuadPart = (((ULONG64)bar_high << 32)) | bar_low;
+        }
+        else
+        {
+            bar_addr.QuadPart = barVal & 0xFFFFFFF0;
+        }
+
+        if (bar_addr.QuadPart == start.QuadPart)
+        {
+            *bar_index = i;
+            status = STATUS_SUCCESS;
+        }
+  
+        if (is64bit) {
+            i++;            //比较完再跳过高 32 位
+        }
+
+    }
+
+    return status;
+}
+
 //映射所有的Bar寄存器
 static NTSTATUS MapBars(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _In_ WDFCMRESLIST ResourcesTranslated)
 {
@@ -55,7 +120,7 @@ static NTSTATUS MapBars(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _
 
     const ULONG ulCmReourceCount = WdfCmResourceListGetCount(ResourcesRaw);     //资源数量
 
-    ULONG ulBarNum = 0;                   //bar当前的数量
+    ULONG ulBarIndex = 0;
 
     InitDevice_Context(ptDevice_Context);
 
@@ -72,28 +137,35 @@ static NTSTATUS MapBars(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _
         {
         case CmResourceTypeMemory:
         {
-            if (ulBarNum < sizeof(ptDevice_Context->bar_infos) / sizeof(ptDevice_Context->bar_infos[0]))
+            //获取真实的bar索引
+            ulBarIndex = 0;
+            status = GetRealBarIndex(Device, ptResource->u.Memory.Start, &ulBarIndex);
+            if (!NT_SUCCESS(status))
             {
-                ptDevice_Context->bar_infos[ulBarNum].length = ptResource->u.Memory.Length;
-                ptDevice_Context->bar_infos[ulBarNum].physical_address = ptResource->u.Memory.Start;
+                TraceError(DBG_INIT, "%!FUNC!: GetRealBarIndex failed: %!STATUS!", status);
+                return status;
+            }
 
-                ptDevice_Context->bar_infos[ulBarNum].kernel_virtual_address = MmMapIoSpace(ptResource->u.Memory.Start, ptResource->u.Memory.Length, MmNonCached);
-                if (ptDevice_Context->bar_infos[ulBarNum].kernel_virtual_address == NULL) {
-                    TraceError(DBG_INIT, "MmMapIoSpace returned NULL! for BAR%u", ulBarNum);
+            if (ulBarIndex < sizeof(ptDevice_Context->bar_infos) / sizeof(ptDevice_Context->bar_infos[0]))
+            {
+                ptDevice_Context->bar_infos[ulBarIndex].length = ptResource->u.Memory.Length;
+                ptDevice_Context->bar_infos[ulBarIndex].physical_address = ptResource->u.Memory.Start;
+
+                ptDevice_Context->bar_infos[ulBarIndex].kernel_virtual_address = MmMapIoSpace(ptResource->u.Memory.Start, ptResource->u.Memory.Length, MmNonCached);
+                if (ptDevice_Context->bar_infos[ulBarIndex].kernel_virtual_address == NULL) {
+                    TraceError(DBG_INIT, "MmMapIoSpace returned NULL! for BAR%u", ulBarIndex);
                     return STATUS_DEVICE_CONFIGURATION_ERROR;
                 }
 
-                ptDevice_Context->bar_infos[ulBarNum].is_valid = TRUE;
+                ptDevice_Context->bar_infos[ulBarIndex].is_valid = TRUE;
 
                 TraceInfo(DBG_INIT, "MM BAR %d (addr:0x%I64x, length:0x%x) mapped at 0x%08p",
-                    ulBarNum, ptResource->u.Memory.Start.QuadPart,
-                    ptResource->u.Memory.Length, ptDevice_Context->bar_infos[ulBarNum].kernel_virtual_address);
-
-                ulBarNum++;
+                    ulBarIndex, ptResource->u.Memory.Start.QuadPart,
+                    ptResource->u.Memory.Length, ptDevice_Context->bar_infos[ulBarIndex].kernel_virtual_address);
             }
             else
             {
-                TraceInfo(DBG_INIT, "MapBars ulBarNum = %u.", ulBarNum);
+                TraceInfo(DBG_INIT, "MapBars ulBarIndex = %u.", ulBarIndex);
             }
         }
             break;
