@@ -34,7 +34,7 @@ enum class _USER_CMD_TYPE: int32_t
 	C2H_SPEED_TEST,			//c2h速度测试
 	FULL_DUPLEX_TEST,		//全双工测试
 
-	BYPASS_TEST,			//bypass测试
+	BAR_TEST,				//bar 测试
 };
 
 int main(int argc, char* argv[])
@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
 			pcXDMA_Test->StopH2C_SpeedTest();
 		}
 		break;
-		case _USER_CMD_TYPE::BYPASS_TEST:
+		case _USER_CMD_TYPE::BAR_TEST:
 		{
 			pcXDMA_Test = hzcc::middleware::CXDMA_Base_Factory::GetInstance()->GetPtr(hzcc::middleware::XDMA_TYPE::BAR);
 			

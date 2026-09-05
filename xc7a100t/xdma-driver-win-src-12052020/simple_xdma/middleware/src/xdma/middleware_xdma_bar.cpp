@@ -30,13 +30,19 @@ namespace hzcc
 
 			m_vecUser_Path.clear();
 			m_vecControl_Path.clear();
-			m_vecBypass_Path.clear();
+			m_vecBypass_0_Path.clear();
+			m_vecBypass_1_Path.clear();
+			m_vecBypass_2_Path.clear();
+			m_vecBypass_3_Path.clear();
 
 			for (int i = 0; i < m_vecBasePath.size(); i++)
 			{
 				m_vecUser_Path.push_back(m_vecBasePath[i] + XDMA_FILE_USER);
 				m_vecControl_Path.push_back(m_vecBasePath[i] + XDMA_FILE_CONTROL);
-				m_vecBypass_Path.push_back(m_vecBasePath[i] + XDMA_FILE_BYPASS);
+				m_vecBypass_0_Path.push_back(m_vecBasePath[i] + XDMA_FILE_BYPASS_0);
+				m_vecBypass_1_Path.push_back(m_vecBasePath[i] + XDMA_FILE_BYPASS_1);
+				m_vecBypass_2_Path.push_back(m_vecBasePath[i] + XDMA_FILE_BYPASS_2);
+				m_vecBypass_3_Path.push_back(m_vecBasePath[i] + XDMA_FILE_BYPASS_3);
 			}
 
             return unDevNum;
@@ -50,8 +56,17 @@ namespace hzcc
 			if (!m_vecControl_Path.empty())
 				m_vecControl_Path.clear();
 
-			if (!m_vecBypass_Path.empty())
-				m_vecBypass_Path.clear();
+			if (!m_vecBypass_0_Path.empty())
+				m_vecBypass_0_Path.clear();
+			
+			if (!m_vecBypass_1_Path.empty())
+				m_vecBypass_1_Path.clear();
+			
+			if (!m_vecBypass_2_Path.empty())
+				m_vecBypass_2_Path.clear();
+			
+			if (!m_vecBypass_3_Path.empty())
+				m_vecBypass_3_Path.clear();
 
 			return 0;
 		}
@@ -103,7 +118,17 @@ namespace hzcc
 			func(m_vecControl_Path);
 			DEBUG(DEBUG_LEVEL_INFO, "");
 
-			func(m_vecBypass_Path);
+			func(m_vecBypass_0_Path);
+			DEBUG(DEBUG_LEVEL_INFO, "");
+
+			func(m_vecBypass_1_Path);
+			DEBUG(DEBUG_LEVEL_INFO, "");
+
+			func(m_vecBypass_2_Path);
+			DEBUG(DEBUG_LEVEL_INFO, "");
+
+			func(m_vecBypass_3_Path);
+			DEBUG(DEBUG_LEVEL_INFO, "");
 
             return 0;
 		}

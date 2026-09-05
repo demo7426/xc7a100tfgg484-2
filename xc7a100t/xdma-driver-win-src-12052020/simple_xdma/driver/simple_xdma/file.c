@@ -35,7 +35,10 @@ static VOID GetFileType(_In_ PUNICODE_STRING file_name, _Out_ PFILE_CONTEXT file
     static FILE_CONTEXT tFileName_FileType_Infos[] = {
         {.file_type = FILE_TYPE_USER, .file_name = XDMA_FILE_USER, .channel = 0 },
         {.file_type = FILE_TYPE_CONTROL, .file_name = XDMA_FILE_CONTROL, .channel = 0 },
-        {.file_type = FILE_TYPE_BYPASS, .file_name = XDMA_FILE_BYPASS, .channel = 0 },
+        {.file_type = FILE_TYPE_BYPASS_0, .file_name = XDMA_FILE_BYPASS_0, .channel = 0 },
+        {.file_type = FILE_TYPE_BYPASS_1, .file_name = XDMA_FILE_BYPASS_1, .channel = 0 },
+        {.file_type = FILE_TYPE_BYPASS_2, .file_name = XDMA_FILE_BYPASS_2, .channel = 0 },
+        {.file_type = FILE_TYPE_BYPASS_3, .file_name = XDMA_FILE_BYPASS_3, .channel = 0 },
         
         {.file_type = FILE_TYPE_H2C, .file_name = XDMA_FILE_H2C_0, .channel = 0 },
         {.file_type = FILE_TYPE_H2C, .file_name = XDMA_FILE_H2C_1, .channel = 1 },
@@ -171,8 +174,17 @@ VOID EVT_WDF_IO_IN_Caller_Context(_In_ WDFDEVICE Device, _In_ WDFREQUEST Request
         case FILE_TYPE_CONTROL:
             barIndex = 1;
             break;
-        case FILE_TYPE_BYPASS:
+        case FILE_TYPE_BYPASS_0:
             barIndex = 2;
+            break;
+        case FILE_TYPE_BYPASS_1:
+            barIndex = 3;
+            break;
+        case FILE_TYPE_BYPASS_2:
+            barIndex = 4;
+            break;
+        case FILE_TYPE_BYPASS_3:
+            barIndex = 5;
             break;
         default:
             TraceError(DBG_INIT, "%!FUNC! failed: file_type = %d", (LONG)ptFile_Context->file_type);
@@ -222,13 +234,12 @@ VOID EvtDeviceFileCreate(_In_ WDFDEVICE Device, _In_ WDFREQUEST Request, _In_ WD
         status = STATUS_INVALID_PARAMETER;
         break;
     case FILE_TYPE_USER:
-        break;
     case FILE_TYPE_CONTROL:
-        break;
-    case FILE_TYPE_BYPASS:
-        break;
+    case FILE_TYPE_BYPASS_0:
+    case FILE_TYPE_BYPASS_1:
+    case FILE_TYPE_BYPASS_2:
+    case FILE_TYPE_BYPASS_3:
     case FILE_TYPE_H2C:
-        break;
     case FILE_TYPE_C2H:
         break;
     default:

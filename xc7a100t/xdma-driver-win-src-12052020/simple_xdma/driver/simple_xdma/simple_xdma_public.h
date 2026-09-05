@@ -28,7 +28,10 @@ DEFINE_GUID(GUID_DEVINTERFACE_XDMA,
 
 #define	XDMA_FILE_USER		L"\\user"
 #define	XDMA_FILE_CONTROL	L"\\control"
-#define XDMA_FILE_BYPASS	L"\\bypass"
+#define XDMA_FILE_BYPASS_0	L"\\bypass_0"
+#define XDMA_FILE_BYPASS_1	L"\\bypass_1"
+#define XDMA_FILE_BYPASS_2	L"\\bypass_2"
+#define XDMA_FILE_BYPASS_3	L"\\bypass_3"
 
 #define	XDMA_FILE_EVENT_0	L"\\event_0"
 #define	XDMA_FILE_EVENT_1	L"\\event_1"

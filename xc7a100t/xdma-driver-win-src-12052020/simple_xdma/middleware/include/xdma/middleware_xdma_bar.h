@@ -49,7 +49,10 @@ namespace hzcc
 		private:
 			std::vector<std::basic_string<TCHAR>> m_vecUser_Path;		
 			std::vector<std::basic_string<TCHAR>> m_vecControl_Path;		
-			std::vector<std::basic_string<TCHAR>> m_vecBypass_Path;		
+			std::vector<std::basic_string<TCHAR>> m_vecBypass_0_Path;		
+			std::vector<std::basic_string<TCHAR>> m_vecBypass_1_Path;		
+			std::vector<std::basic_string<TCHAR>> m_vecBypass_2_Path;		
+			std::vector<std::basic_string<TCHAR>> m_vecBypass_3_Path;		
 		};
 	}
 	
