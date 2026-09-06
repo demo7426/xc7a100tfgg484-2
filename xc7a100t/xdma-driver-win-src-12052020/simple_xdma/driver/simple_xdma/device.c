@@ -21,6 +21,7 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #include "file.h"
 #include "wdmguid.h"
 #include "reg.h"
+#include "interrupt.h"
 
 #ifdef DBG
 // The trace message header (.tmh) file must be included in a source file before any WPP macro 
@@ -72,8 +73,8 @@ static NTSTATUS GetRealBarIndex(IN WDFDEVICE wdfDevice, PHYSICAL_ADDRESS start, 
         BOOLEAN is64bit = (((barVal >> 1) & 0x3) == 0x2); // bits[2:1]==10
         BOOLEAN prefetchable = (barVal & 0x8) ? TRUE : FALSE;
 
-        TraceInfo(DBG_INIT, "%s, bar[%u] raw=0x%x, addr=0x%x, %s-bit%s",
-            __func__, i, barVal, barVal & 0xFFFFFFF0,
+        TraceInfo(DBG_INIT, "%!FUNC!: bar[%u] raw=0x%x, addr=0x%x, %s-bit%s",
+            i, barVal, barVal & 0xFFFFFFF0,
             is64bit ? "64" : "32",
             prefetchable ? ", prefetchable" : ", non-prefetchable");
 
@@ -113,7 +114,7 @@ static NTSTATUS MapBars(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _
 {
     UNREFERENCED_PARAMETER(ResourcesTranslated);
 
-    TraceVerbose(DBG_INIT, "MapBars is enter.");
+    TraceVerbose(DBG_INIT, "%!FUNC! is enter.");
 
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -176,14 +177,14 @@ static NTSTATUS MapBars(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _
     }
 
 
-    TraceVerbose(DBG_INIT, "MapBars is end.");
+    TraceVerbose(DBG_INIT, "%!FUNC! is end.");
 
     return status;
 }
 
 static NTSTATUS EVT_WDF_Device_Prepare_Hardware(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _In_ WDFCMRESLIST ResourcesTranslated)
 {
-    TraceVerbose(DBG_INIT, "EVT_WDF_Device_Prepare_Hardware is enter.");
+    TraceVerbose(DBG_INIT, "%!FUNC! is enter.");
 
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -200,7 +201,7 @@ static NTSTATUS EVT_WDF_Device_Prepare_Hardware(_In_ WDFDEVICE Device, _In_ WDFC
 
     status = SetupInterrupts(Device, ResourcesRaw, ResourcesTranslated, ptDevice_Context->interrupt_regs);      //设置irp中断
 
-    TraceVerbose(DBG_INIT, "EVT_WDF_Device_Prepare_Hardware is enter.");
+    TraceVerbose(DBG_INIT, "%!FUNC! is enter.");
 
     return status;
 }
@@ -209,7 +210,7 @@ static NTSTATUS EVT_WDF_Device_Relase_Hardware(_In_ WDFDEVICE Device, _In_ WDFCM
 {
     UNREFERENCED_PARAMETER(ResourcesTranslated);
 
-    TraceInfo(DBG_INIT, "EVT_WDF_Device_Relase_Hardware is enter.");
+    TraceInfo(DBG_INIT, "%!FUNC! is enter.");
 
     PDEVICE_CONTEXT ptDevice_Context = GetDeviceContext(Device);
     for (ULONG i = 0; i < sizeof(ptDevice_Context->bar_infos) / sizeof(ptDevice_Context->bar_infos[0]); i++)
@@ -223,6 +224,8 @@ static NTSTATUS EVT_WDF_Device_Relase_Hardware(_In_ WDFDEVICE Device, _In_ WDFCM
 
     }
 
+    TraceVerbose(DBG_INIT, "%!FUNC! is end.");
+
     return STATUS_SUCCESS;
 }
 
@@ -230,7 +233,7 @@ NTSTATUS EVT_WDF_Driver_Device_Add(_In_ WDFDRIVER driver, _Inout_ PWDFDEVICE_INI
 {
     UNREFERENCED_PARAMETER(driver);
 
-    TraceVerbose(DBG_INIT, "EVT_WDF_Driver_Device_Add is enter.");
+    TraceVerbose(DBG_INIT, "%!FUNC! is enter.");
 
     NTSTATUS status = STATUS_SUCCESS;
     WDFDEVICE tWDFDevice = NULL;
@@ -277,7 +280,7 @@ NTSTATUS EVT_WDF_Driver_Device_Add(_In_ WDFDRIVER driver, _Inout_ PWDFDEVICE_INI
     status = WdfDeviceCreate(&device_init, &tWDF_Object_Attributes, &tWDFDevice);
     if (!NT_SUCCESS(status))
     {
-        TraceError(DBG_INIT, "WdfDeviceCreate failed: %!STATUS!", status);
+        TraceError(DBG_INIT, "%!FUNC!: WdfDeviceCreate failed: %!STATUS!", status);
         return status;
     }
 
@@ -288,18 +291,18 @@ NTSTATUS EVT_WDF_Driver_Device_Add(_In_ WDFDRIVER driver, _Inout_ PWDFDEVICE_INI
     status = WdfIoQueueCreate(tWDFDevice, &tWDF_IO_Queue_Config, WDF_NO_OBJECT_ATTRIBUTES, &tWDFQueue);
     if (!NT_SUCCESS(status))
     {
-        TraceError(DBG_INIT, "WdfIoQueueCreate failed: %!STATUS!", status);
+        TraceError(DBG_INIT, "%!FUNC!: WdfIoQueueCreate failed: %!STATUS!", status);
         return status;
     }
 
     status = WdfDeviceCreateDeviceInterface(tWDFDevice, &GUID_DEVINTERFACE_XDMA, NULL);
     if (!NT_SUCCESS(status))
     {
-        TraceError(DBG_INIT, "WdfDeviceCreateDeviceInterface failed: %!STATUS!", status);
+        TraceError(DBG_INIT, "%!FUNC!: WdfDeviceCreateDeviceInterface failed: %!STATUS!", status);
         return status;
     }
 
-    TraceVerbose(DBG_INIT, "EVT_WDF_Driver_Device_Add is end.");
+    TraceVerbose(DBG_INIT, "%!FUNC! is end.");
 
     return status;
 }

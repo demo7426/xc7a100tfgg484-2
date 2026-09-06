@@ -159,16 +159,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="device.h" />
+    <ClInclude Include="dma_engine.h" />
     <ClInclude Include="driver.h" />
     <ClInclude Include="file.h" />
     <ClInclude Include="interrupt.h" />
     <ClInclude Include="reg.h" />
-    <ClInclude Include="simple_xdma_public.h" />
+    <ClInclude Include="xdma_public.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="trace.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="device.c" />
+    <ClCompile Include="dma_engine.c" />
     <ClCompile Include="driver.c" />
     <ClCompile Include="file.c" />
     <ClCompile Include="interrupt.c" />

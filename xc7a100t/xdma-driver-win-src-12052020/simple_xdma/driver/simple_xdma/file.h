@@ -20,7 +20,7 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #include <ntddk.h>
 #include <wdf.h>
 
-#include "simple_xdma_public.h"
+#include "xdma_public.h"
 
 enum FILE_TYPE
 {

@@ -28,7 +28,7 @@ static VOID GetFileType(_In_ PUNICODE_STRING file_name, _Out_ PFILE_CONTEXT file
 {
     if (file_context == NULL)
     {
-        TraceError(DBG_INIT, "GetFileType input parameter is error.");
+        TraceError(DBG_INIT, "%!FUNC!:  input parameter is error.");
         return;
     }
 

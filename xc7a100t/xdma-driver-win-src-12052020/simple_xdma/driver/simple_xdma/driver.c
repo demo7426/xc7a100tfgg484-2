@@ -39,9 +39,11 @@ static NTSTATUS InitRegistryParameter(IN PDRIVER_OBJECT driver_object);
 /// <returns></returns>
 VOID DriverUnload(IN PDRIVER_OBJECT driver_object)
 {
-    TraceVerbose(DBG_INIT, "DriverUnload is end.");
+    TraceVerbose(DBG_INIT, "%!FUNC! is start.");
 
     WPP_CLEANUP(driver_object);
+
+    TraceVerbose(DBG_INIT, "%!FUNC! is end.");
 }
 
 /// <summary>
@@ -63,7 +65,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_object, IN PUNICODE_STRING registe
 
     WPP_INIT_TRACING(driver_object, register_path);
 
-    TraceVerbose(DBG_INIT, "DriverEntry is start.");
+    TraceVerbose(DBG_INIT, "%!FUNC! is start.");
 
     WDF_DRIVER_CONFIG_INIT(&tWDF_Driver_Config, EVT_WDF_Driver_Device_Add);
 
@@ -73,7 +75,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_object, IN PUNICODE_STRING registe
     status = WdfDriverCreate(driver_object, register_path, &tWDF_Object_Attributes, &tWDF_Driver_Config, &tWDFDriver);
     if (!NT_SUCCESS(status))
     {
-        TraceError(DBG_INIT, "WdfDriverCreate is error.");
+        TraceError(DBG_INIT, "%!FUNC!: WdfDriverCreate is error.");
 
         WPP_CLEANUP(driver_object);
         return status;
@@ -82,7 +84,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_object, IN PUNICODE_STRING registe
     ptDriver_Context = GetDriverContext(tWDFDriver);
     if (!ptDriver_Context)
     {
-        TraceError(DBG_INIT, "GetDriverContext is error.");
+        TraceError(DBG_INIT, "%!FUNC!: GetDriverContext is error.");
 
         WPP_CLEANUP(driver_object);
         return STATUS_INVALID_PARAMETER;
@@ -100,7 +102,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_object, IN PUNICODE_STRING registe
     }
     else
     {
-        TraceError(DBG_INIT, "uni.Length = %u��sizeof ptDriver_Context->versions = %u.", uni.Length, sizeof ptDriver_Context->versions);
+        TraceError(DBG_INIT, "%!FUNC!: uni.Length = %u��sizeof ptDriver_Context->versions = %u.", uni.Length, sizeof ptDriver_Context->versions);
 
         status = STATUS_INSUFFICIENT_RESOURCES;
     }
@@ -112,7 +114,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_object, IN PUNICODE_STRING registe
 
     driver_object->DriverUnload = DriverUnload;
 
-    TraceVerbose(DBG_INIT, "DriverEntry is end.");
+    TraceVerbose(DBG_INIT, "%!FUNC! is end.");
 
     return status;
 }
@@ -120,6 +122,8 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_object, IN PUNICODE_STRING registe
 static NTSTATUS InitRegistryParameter(IN PDRIVER_OBJECT driver_object)
 {
     UNREFERENCED_PARAMETER(driver_object);
+
+    TraceVerbose(DBG_INIT, "%!FUNC! is start.");
 
     NTSTATUS status = STATUS_SUCCESS;
 

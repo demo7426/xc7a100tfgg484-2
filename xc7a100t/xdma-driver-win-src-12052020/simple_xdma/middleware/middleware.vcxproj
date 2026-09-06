@@ -27,12 +27,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\debug.h" />
-    <ClInclude Include="include\simple_xdma_public.h" />
     <ClInclude Include="include\singleton.h" />
     <ClInclude Include="include\xdma\middleware_xdma.h" />
     <ClInclude Include="include\xdma\middleware_xdma_bar.h" />
     <ClInclude Include="include\xdma\middleware_xdma_factory.h" />
     <ClInclude Include="include\xdma\middleware_xdma_xilinx.h" />
+    <ClInclude Include="include\xdma_public.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

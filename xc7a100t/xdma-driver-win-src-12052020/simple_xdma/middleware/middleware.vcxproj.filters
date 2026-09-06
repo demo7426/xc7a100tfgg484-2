@@ -59,7 +59,7 @@
     <ClInclude Include="include\xdma\middleware_xdma_bar.h">
       <Filter>头文件\include\xdma</Filter>
     </ClInclude>
-    <ClInclude Include="include\simple_xdma_public.h">
+    <ClInclude Include="include\xdma_public.h">
       <Filter>头文件\include</Filter>
     </ClInclude>
   </ItemGroup>

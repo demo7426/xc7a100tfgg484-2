@@ -21,8 +21,9 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #include <wdf.h>
 #include <wdm.h>
 
-#include "simple_xdma_public.h"
-#include "interrupt.h"
+#include "xdma_public.h"
+
+typedef struct _XDMA_IRQ_REGS XDMA_IRQ_REGS;
 
 typedef struct _BAR_INFO
 {

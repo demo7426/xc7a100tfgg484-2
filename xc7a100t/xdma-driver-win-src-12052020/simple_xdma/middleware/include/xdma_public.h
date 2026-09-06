@@ -14,8 +14,8 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 
 *************************************************/
 
-#ifndef __PUBLIC_H__
-#define __PUBLIC_H__
+#ifndef __SIMPLE_XDMA_PUBLIC_H__
+#define __SIMPLE_XDMA_PUBLIC_H__
 
 #include <initguid.h>
 
@@ -65,6 +65,7 @@ DEFINE_GUID(GUID_DEVINTERFACE_XDMA,
 #define IOCTL_XDMA_GET_VERSION			XDMA_IOCTL(0x0)
 #define IOCTL_MAP_BAR					XDMA_IOCTL(0x1)
 
+#pragma pack(1)
 
 typedef struct _XDMA_BAR_INFO
 {
@@ -72,5 +73,6 @@ typedef struct _XDMA_BAR_INFO
     ULONG bar_length;
 }XDMA_BAR_INFO, * PXDMA_BAR_INFO;
 
+#pragma pack()
 
-#endif // !__PUBLIC_H__
+#endif // !__SIMPLE_XDMA_PUBLIC_H__

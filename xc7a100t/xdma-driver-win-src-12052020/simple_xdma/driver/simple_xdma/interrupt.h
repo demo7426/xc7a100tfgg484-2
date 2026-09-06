@@ -20,8 +20,10 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #include <ntddk.h>
 #include <wdf.h>
 
+#pragma pack(1)
+
 // 中断寄存器结构（与 XDMA IP 核布局一致）
-typedef struct {
+typedef struct _XDMA_IRQ_REGS {
     UINT32 identifier;
     UINT32 userIntEnable;
     UINT32 userIntEnableW1S;
@@ -38,7 +40,9 @@ typedef struct {
     UINT32 userVector[4];
     UINT32 reserved_3[4];
     UINT32 channelVector[2];
-} XDMA_IRQ_REGS;
+} XDMA_IRQ_REGS, *PXDMA_IRQ_REGS;
+
+#pragma pack()
 
 typedef struct _INTERRUPT_CONTEXT
 {

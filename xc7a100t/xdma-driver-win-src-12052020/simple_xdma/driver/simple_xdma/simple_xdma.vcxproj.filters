@@ -38,13 +38,16 @@
     <ClInclude Include="file.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="simple_xdma_public.h">
+    <ClInclude Include="xdma_public.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="interrupt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="reg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dma_engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -62,6 +65,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="interrupt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dma_engine.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

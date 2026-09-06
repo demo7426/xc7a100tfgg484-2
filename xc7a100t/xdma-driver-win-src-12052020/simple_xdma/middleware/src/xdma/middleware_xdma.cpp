@@ -20,7 +20,7 @@ Copyright (C), 2026-2040    , Hang Zhou Chang Chuan Co., Ltd.
 #include "debug.h"
 
 #include "middleware_xdma.h"
-#include "simple_xdma_public.h"
+#include "xdma_public.h"
 
 namespace hzcc
 {
