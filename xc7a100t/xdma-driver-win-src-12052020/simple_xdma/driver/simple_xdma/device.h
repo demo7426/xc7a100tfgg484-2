@@ -22,6 +22,7 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #include <wdm.h>
 
 #include "simple_xdma_public.h"
+#include "interrupt.h"
 
 typedef struct _BAR_INFO
 {
@@ -37,6 +38,7 @@ typedef struct _DEVICE_CONTEXT
 {
     BAR_INFO bar_infos[BAR_MAX_NUM];
     
+    volatile XDMA_IRQ_REGS* interrupt_regs;
 
 }DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 

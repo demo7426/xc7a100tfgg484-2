@@ -20,6 +20,7 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #include "queue.h"
 #include "file.h"
 #include "wdmguid.h"
+#include "reg.h"
 
 #ifdef DBG
 // The trace message header (.tmh) file must be included in a source file before any WPP macro 
@@ -118,18 +119,18 @@ static NTSTATUS MapBars(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _
 
     PDEVICE_CONTEXT ptDevice_Context = GetDeviceContext(Device);
 
-    const ULONG ulCmReourceCount = WdfCmResourceListGetCount(ResourcesRaw);     //资源数量
+    const ULONG ulCmResourceCount = WdfCmResourceListGetCount(ResourcesRaw);     //资源数量
 
     ULONG ulBarIndex = 0;
 
     InitDevice_Context(ptDevice_Context);
 
-    for (ULONG index = 0; index < ulCmReourceCount; ++index)
+    for (ULONG index = 0; index < ulCmResourceCount; ++index)
     {
         PCM_PARTIAL_RESOURCE_DESCRIPTOR ptResource = WdfCmResourceListGetDescriptor(ResourcesRaw, index);
         if (!ptResource)
         {
-            TraceError(DBG_INIT, "WdfCmResourceListGetDescriptor failed: %!STATUS!, index = %u", status, index);
+            TraceError(DBG_INIT, "%!FUNC!: WdfCmResourceListGetDescriptor failed: %!STATUS!, index = %u", status, index);
             return STATUS_DEVICE_CONFIGURATION_ERROR;
         }
 
@@ -153,19 +154,19 @@ static NTSTATUS MapBars(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesRaw, _
 
                 ptDevice_Context->bar_infos[ulBarIndex].kernel_virtual_address = MmMapIoSpace(ptResource->u.Memory.Start, ptResource->u.Memory.Length, MmNonCached);
                 if (ptDevice_Context->bar_infos[ulBarIndex].kernel_virtual_address == NULL) {
-                    TraceError(DBG_INIT, "MmMapIoSpace returned NULL! for BAR%u", ulBarIndex);
+                    TraceError(DBG_INIT, "%!FUNC!: MmMapIoSpace returned NULL! for BAR%u", ulBarIndex);
                     return STATUS_DEVICE_CONFIGURATION_ERROR;
                 }
 
                 ptDevice_Context->bar_infos[ulBarIndex].is_valid = TRUE;
 
-                TraceInfo(DBG_INIT, "MM BAR %d (addr:0x%I64x, length:0x%x) mapped at 0x%08p",
+                TraceInfo(DBG_INIT, "%!FUNC!: MM BAR %d (addr:0x%I64x, length:0x%x) mapped at 0x%08p",
                     ulBarIndex, ptResource->u.Memory.Start.QuadPart,
                     ptResource->u.Memory.Length, ptDevice_Context->bar_infos[ulBarIndex].kernel_virtual_address);
             }
             else
             {
-                TraceInfo(DBG_INIT, "MapBars ulBarIndex = %u.", ulBarIndex);
+                TraceInfo(DBG_INIT, "%!FUNC!: MapBars ulBarIndex = %u.", ulBarIndex);
             }
         }
             break;
@@ -187,6 +188,17 @@ static NTSTATUS EVT_WDF_Device_Prepare_Hardware(_In_ WDFDEVICE Device, _In_ WDFC
     NTSTATUS status = STATUS_SUCCESS;
 
     status = MapBars(Device, ResourcesRaw, ResourcesTranslated);
+    if (!NT_SUCCESS(status))
+    {
+        TraceError(DBG_INIT, "%!FUNC!: MapBars failed: %!STATUS!", status);
+        return status;
+    }
+
+    PDEVICE_CONTEXT ptDevice_Context = GetDeviceContext(Device);
+
+    ptDevice_Context->interrupt_regs = (volatile XDMA_IRQ_REGS*)((PUCHAR)ptDevice_Context->bar_infos[CONFIG_BAR_INDEX].kernel_virtual_address + IRQ_BLOCK_REGISTERS);
+
+    status = SetupInterrupts(Device, ResourcesRaw, ResourcesTranslated, ptDevice_Context->interrupt_regs);      //设置irp中断
 
     TraceVerbose(DBG_INIT, "EVT_WDF_Device_Prepare_Hardware is enter.");
 
