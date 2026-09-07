@@ -27,7 +27,7 @@ namespace hzcc
     namespace middleware
     {
         #define MAX_BUF_SIZE (8 * 1024 * 1024)      //单次不能超过 8MB，超出驱动自动分片
-        #define ALIGNED_SIZE 256                    //内存对其大小
+        #define ALIGNED_SIZE (4 * 1024)             //内存页大小
 
         int CXDMA_Xilinx::Init()
         {
@@ -38,8 +38,8 @@ namespace hzcc
 
             if (unDevNum >= 1)
             {
-                m_vecC2H_Path.push_back(m_vecBasePath.back() + XDMA_FILE_H2C_0);
-                m_vecH2C_Path.push_back(m_vecBasePath.back() + XDMA_FILE_C2H_0);
+                m_vecC2H_Path.push_back(m_vecBasePath.back() + XDMA_FILE_C2H_0);
+                m_vecH2C_Path.push_back(m_vecBasePath.back() + XDMA_FILE_H2C_0);
             }
 
 #if 0
@@ -290,7 +290,7 @@ namespace hzcc
                     break;
                 }
 
-                for (DWORD len = ALIGNED_SIZE; len <= MAX_BUF_SIZE; len *= 2)
+                for (DWORD len = 256; len <= MAX_BUF_SIZE; len *= 2)
                 {
                     lpNumberOfBytesWritten = 0;
                     if (!WriteFile(hH2C_File, (LPVOID)pchWriteBuf, len, &lpNumberOfBytesWritten, NULL) && lpNumberOfBytesWritten != len)
