@@ -18,6 +18,7 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #define __DMA_ENGINE_H__
 
 #include <ntddk.h>
+#include <ntintsafe.h>
 #include <wdf.h>
 
 #define XDMA_MAX_NUM_CHANNELS   (4)
@@ -36,12 +37,29 @@ typedef enum DirToDev_t {
 //DMA 引擎抽象
 typedef struct _DMA_ENGINE
 {
-    DEVICE_CONTEXT* parent_device;
+    DEVICE_CONTEXT* parentDevice;
 
-    //寄存器访问
+    // 寄存器访问
     volatile XDMA_ENGINE_REGS* regs;
     volatile XDMA_SGDMA_REGS* sgdma;
 
+    // 引擎配置
+    UINT32  irqBitMask;
+    ULONG   channel;
+    DirToDev dir;
+    BOOLEAN enabled;
+
+    // 请求跟踪
+    volatile BOOLEAN isReqPending;
+    WDFSPINLOCK engineLock;
+
+    // DMA 传输相关
+    WDFCOMMONBUFFER   descBuffer;       // 描述符缓冲区
+    WDFDMATRANSACTION dmaTransaction;   // WDF DMA 事务
+    WDFQUEUE          queue;            // 该引擎的IO队列
+    KEVENT            completionEvent;  // 完成信号
+
+    UINT32  capacity;                   // 描述符缓冲容量
 }DMA_ENGINE, *PDMA_ENGINE;
 
 //探测并初始化所有 DMA 引擎

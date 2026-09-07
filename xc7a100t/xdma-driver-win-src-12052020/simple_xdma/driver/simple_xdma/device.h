@@ -22,6 +22,7 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #include <wdm.h>
 
 #include "xdma_public.h"
+#include "dma_engine.h"
 
 typedef struct _XDMA_IRQ_REGS XDMA_IRQ_REGS;
 
@@ -40,6 +41,15 @@ typedef struct _DEVICE_CONTEXT
     BAR_INFO bar_infos[BAR_MAX_NUM];
     
     volatile XDMA_IRQ_REGS* interrupt_regs;
+
+    // ===== DMA 多通道支持 =====
+
+    ULONG h2c_count;
+    ULONG c2h_count;
+
+    // DMA Engine management
+    DMA_ENGINE engines[XDMA_MAX_NUM_CHANNELS][XDMA_NUM_DIRECTIONS];
+    WDFDMAENABLER dmaEnabler;   // WDF DMA Enabler for the engine queues
 
 }DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
