@@ -22,6 +22,7 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #include "wdmguid.h"
 #include "reg.h"
 #include "interrupt.h"
+#include "dma_engine.h"
 
 #ifdef DBG
 // The trace message header (.tmh) file must be included in a source file before any WPP macro 
@@ -200,13 +201,48 @@ static NTSTATUS EVT_WDF_Device_Prepare_Hardware(_In_ WDFDEVICE Device, _In_ WDFC
     ptDevice_Context->interrupt_regs = (volatile XDMA_IRQ_REGS*)((PUCHAR)ptDevice_Context->bar_infos[CONFIG_BAR_INDEX].kernel_virtual_address + IRQ_BLOCK_REGISTERS);
 
     status = SetupInterrupts(Device, ResourcesRaw, ResourcesTranslated, ptDevice_Context->interrupt_regs);      //设置irp中断
+    if (!NT_SUCCESS(status))
+    {
+        TraceError(DBG_INIT, "%!FUNC!: SetupInterrupts failed: %!STATUS!", status);
+        return status;
+    }
+
+    // ===== 创建 WDF DMA Enabler =====
+    WDF_DMA_ENABLER_CONFIG dma_config;
+    WDF_DMA_ENABLER_CONFIG_INIT(
+        &dma_config,
+        WdfDmaProfileScatterGather64,       //64位地址
+        XDMA_MAX_TRANSFER_SIZE
+        );
+
+    /*
+    - Version 1：老旧传统 DMA 接口（Legacy）
+    - Version 2：早期 SG DMA
+    - Version 3：**支持 64 位地址、MSI‑X、多通道、更大的地址空间，Windows 8/10/11 现代 DMA 接口**
+    */
+    dma_config.WdmDmaVersionOverride = 3;
+
+    status = WdfDmaEnablerCreate(Device, &dma_config, WDF_NO_OBJECT_ATTRIBUTES, &ptDevice_Context->dmaEnabler);
+    if (!NT_SUCCESS(status))
+    {
+        TraceError(DBG_INIT, "%!FUNC!: WdfDmaEnablerCreate failed: %!STATUS!", status);
+        return status;
+    }
+
+    // ===== 探测并初始化 DMA 引擎 =====
+    status = ProbeEngine(ptDevice_Context);
+    if (!NT_SUCCESS(status))
+    {
+        TraceError(DBG_INIT, "%!FUNC!: ProbeEngine failed: %!STATUS!", status);
+        return status;
+    }
 
     TraceVerbose(DBG_INIT, "%!FUNC! is enter.");
 
     return status;
 }
 
-static NTSTATUS EVT_WDF_Device_Relase_Hardware(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesTranslated)
+static NTSTATUS EVT_WDF_Device_Release_Hardware(_In_ WDFDEVICE Device, _In_ WDFCMRESLIST ResourcesTranslated)
 {
     UNREFERENCED_PARAMETER(ResourcesTranslated);
 
@@ -223,6 +259,8 @@ static NTSTATUS EVT_WDF_Device_Relase_Hardware(_In_ WDFDEVICE Device, _In_ WDFCM
         }
 
     }
+
+    CloseEngine(ptDevice_Context);      //关闭引擎
 
     TraceVerbose(DBG_INIT, "%!FUNC! is end.");
 
@@ -241,7 +279,6 @@ NTSTATUS EVT_WDF_Driver_Device_Add(_In_ WDFDRIVER driver, _Inout_ PWDFDEVICE_INI
 
     WDF_PNPPOWER_EVENT_CALLBACKS tWDFPNPPowerCallBacks = { 0 };
 
-    WDF_IO_QUEUE_CONFIG tWDF_IO_Queue_Config = { 0 };
     WDFQUEUE tWDFQueue = { 0 };
 
     WdfDeviceInitSetIoType(device_init, WdfDeviceIoDirect);     //设置 WDFDEVICE_INIT 的IO方式;主要是ReadFile，WriteFile
@@ -270,7 +307,7 @@ NTSTATUS EVT_WDF_Driver_Device_Add(_In_ WDFDRIVER driver, _Inout_ PWDFDEVICE_INI
 
     //PNP hardware
     tWDFPNPPowerCallBacks.EvtDevicePrepareHardware = EVT_WDF_Device_Prepare_Hardware;
-    tWDFPNPPowerCallBacks.EvtDeviceReleaseHardware = EVT_WDF_Device_Relase_Hardware;
+    tWDFPNPPowerCallBacks.EvtDeviceReleaseHardware = EVT_WDF_Device_Release_Hardware;
 
     WdfDeviceInitSetPnpPowerEventCallbacks(device_init, &tWDFPNPPowerCallBacks);
 
@@ -283,6 +320,68 @@ NTSTATUS EVT_WDF_Driver_Device_Add(_In_ WDFDRIVER driver, _Inout_ PWDFDEVICE_INI
         TraceError(DBG_INIT, "%!FUNC!: WdfDeviceCreate failed: %!STATUS!", status);
         return status;
     }
+
+    DEVICE_CONTEXT* device_context = GetDeviceContext(tWDFDevice);
+
+#if 1       //自定义queue
+    /*
+    WDF_IO_QUEUE_CONFIG_INIT函数
+    用来创建**额外的独立自定义队列**（非默认）
+
+    - 不会自动接收所有 IRP；必须手动把 I/O 请求投递到这个队列
+    - 一个设备可以创建**多个自定义队列**，用来做请求分流（比如 H2C 一个队列，C2H 一个队列）
+    */
+
+    //为每个 H2C 通道创建 Write 队列
+    for (ULONG ch = 0; ch < XDMA_MAX_NUM_CHANNELS; ch++)
+    {
+        WDF_IO_QUEUE_CONFIG tWDF_IO_Queue_Config = { 0 };
+        WDF_IO_QUEUE_CONFIG_INIT(&tWDF_IO_Queue_Config, WdfIoQueueDispatchSequential);
+        tWDF_IO_Queue_Config.EvtIoWrite = EVT_WDF_IO_Queue_IO_Write;
+        tWDF_IO_Queue_Config.EvtIoStop = EVT_WDF_IO_Queue_IO_Stop;      // 设置 DMA Enabler 和 ProgramDma 回调
+
+        WDF_OBJECT_ATTRIBUTES wdf_obj_attrs;
+        WDF_OBJECT_ATTRIBUTES_INIT(&wdf_obj_attrs);
+        WDF_OBJECT_ATTRIBUTES_SET_CONTEXT_TYPE(&wdf_obj_attrs, QUEUE_CONTEXT);  // ← 加这一行！
+        wdf_obj_attrs.ParentObject = tWDFDevice;
+
+        status = WdfIoQueueCreate(tWDFDevice, &tWDF_IO_Queue_Config, &wdf_obj_attrs, &device_context->engines[ch][H2C].queue);
+        if (!NT_SUCCESS(status))
+        {
+            TraceError(DBG_INIT, "%!FUNC!: WdfIoQueueCreate failed: %!STATUS!", status);
+            return status;
+        }
+
+        PQUEUE_CONTEXT queue_context = GetQueueContext(device_context->engines[ch][H2C].queue);
+        queue_context->engine = &device_context->engines[ch][H2C];
+    }
+    
+    //为每个 C2H 通道创建 Write 队列
+    for (ULONG ch = 0; ch < XDMA_MAX_NUM_CHANNELS; ch++)
+    {
+        WDF_IO_QUEUE_CONFIG tWDF_IO_Queue_Config = { 0 };
+        WDF_IO_QUEUE_CONFIG_INIT(&tWDF_IO_Queue_Config, WdfIoQueueDispatchSequential);
+        tWDF_IO_Queue_Config.EvtIoRead = EVT_WDF_IO_Queue_IO_Read;
+
+        WDF_OBJECT_ATTRIBUTES wdf_obj_attrs;
+        WDF_OBJECT_ATTRIBUTES_INIT(&wdf_obj_attrs);
+        WDF_OBJECT_ATTRIBUTES_SET_CONTEXT_TYPE(&wdf_obj_attrs, QUEUE_CONTEXT);  // ← 加这一行！
+        wdf_obj_attrs.ParentObject = tWDFDevice;
+
+        status = WdfIoQueueCreate(tWDFDevice, &tWDF_IO_Queue_Config, &wdf_obj_attrs, &device_context->engines[ch][C2H].queue);
+        if (!NT_SUCCESS(status))
+        {
+            TraceError(DBG_INIT, "%!FUNC!: WdfIoQueueCreate failed: %!STATUS!", status);
+            return status;
+        }
+
+        PQUEUE_CONTEXT queue_context = GetQueueContext(device_context->engines[ch][C2H].queue);
+        queue_context->engine = &device_context->engines[ch][C2H];
+    }
+
+#endif
+
+    WDF_IO_QUEUE_CONFIG tWDF_IO_Queue_Config = { 0 };
 
     //必须使用WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE函数初始化，否则会导致应用层IO调用失败
     WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(&tWDF_IO_Queue_Config, WdfIoQueueDispatchSequential);

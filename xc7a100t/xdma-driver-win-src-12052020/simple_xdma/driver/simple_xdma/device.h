@@ -48,8 +48,8 @@ typedef struct _DEVICE_CONTEXT
     ULONG c2h_count;
 
     // DMA Engine management
-    DMA_ENGINE engines[XDMA_MAX_NUM_CHANNELS][XDMA_NUM_DIRECTIONS];
     WDFDMAENABLER dmaEnabler;   // WDF DMA Enabler for the engine queues
+    DMA_ENGINE engines[XDMA_MAX_NUM_CHANNELS][XDMA_NUM_DIRECTIONS];
 
 }DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 

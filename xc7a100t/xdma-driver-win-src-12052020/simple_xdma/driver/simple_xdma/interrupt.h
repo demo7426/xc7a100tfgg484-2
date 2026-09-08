@@ -20,6 +20,8 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #include <ntddk.h>
 #include <wdf.h>
 
+typedef struct _DEVICE_CONTEXT DEVICE_CONTEXT;
+
 #pragma pack(1)
 
 // 中断寄存器结构（与 XDMA IP 核布局一致）
@@ -47,6 +49,10 @@ typedef struct _XDMA_IRQ_REGS {
 typedef struct _INTERRUPT_CONTEXT
 {
     volatile XDMA_IRQ_REGS* regs;
+
+    DEVICE_CONTEXT* deviceContext;  //用于访问引擎数组
+    ULONG channelIrqPending;        //暂存通道中断
+    ULONG userIrqPending;           //暂存用户中断
 }INTERRUPT_CONTEXT, *PINTERRUPT_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(INTERRUPT_CONTEXT, GetInterruptContext)

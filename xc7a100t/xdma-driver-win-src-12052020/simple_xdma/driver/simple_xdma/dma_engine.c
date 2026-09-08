@@ -57,8 +57,8 @@ static VOID CountChannels(_In_ DEVICE_CONTEXT* device_context, _Out_ ULONG* h2c_
 
     for (ULONG ch = 0; ch < XDMA_MAX_NUM_CHANNELS; ++ch)
     {
-        EngineExists(device_context, H2C, ch) == TRUE ? ++h2c_count : 0;
-        EngineExists(device_context, C2H, ch) == TRUE ? ++c2h_count : 0;
+        (EngineExists(device_context, H2C, ch) == TRUE) ? (*h2c_count)++ : 0;
+        (EngineExists(device_context, C2H, ch) == TRUE) ? (*c2h_count)++ : 0;
     }
 
     TraceVerbose(DBG_INIT, "%!FUNC! is end.");
@@ -258,6 +258,16 @@ NTSTATUS ProbeEngine(_In_ DEVICE_CONTEXT* device_contex)
         }
     }
 
+    // ProbeEngine 末尾，所有引擎创建完毕后：
+    UINT32 channel_mask = 0;
+    for (ch = 0; ch < device_contex->h2c_count; ch++) {
+        channel_mask |= device_contex->engines[ch][H2C].irqBitMask;
+    }
+    for ( ch = 0; ch < device_contex->c2h_count; ch++) {
+        channel_mask |= device_contex->engines[ch][C2H].irqBitMask;
+    }
+    device_contex->interrupt_regs->channelIntEnableW1S = channel_mask;
+
     TraceVerbose(DBG_INIT, "%!FUNC! is end.");
 
     return status;
@@ -350,15 +360,92 @@ VOID EngineProcessChannelInterrupt(_In_ DEVICE_CONTEXT* device_contex)
 
 BOOLEAN EvtProgramDma(_In_ WDFDMATRANSACTION transaction, _In_ WDFDEVICE device, _In_ WDFCONTEXT wdf_context, _In_ WDF_DMA_DIRECTION direction, _In_ PSCATTER_GATHER_LIST sg_list)
 {
-    UNREFERENCED_PARAMETER(transaction);
     UNREFERENCED_PARAMETER(device);
-    UNREFERENCED_PARAMETER(wdf_context);
-    UNREFERENCED_PARAMETER(direction);
-    UNREFERENCED_PARAMETER(sg_list);
 
     TraceVerbose(DBG_INIT, "%!FUNC! is start.");
 
+    PDMA_ENGINE engine = (PDMA_ENGINE)wdf_context;
+
+    PHYSICAL_ADDRESS desc_pa;       //物理地址
+    DMA_DESCRIPTOR* desc = NULL;           //虚拟地址
+
+    desc = (DMA_DESCRIPTOR*)WdfCommonBufferGetAlignedVirtualAddress(engine->descBuffer);
+    desc_pa = WdfCommonBufferGetAlignedLogicalAddress(engine->descBuffer);
+
+    if (sg_list->NumberOfElements > engine->capacity)
+    {
+        TraceError(DBG_DMA, "%!FUNC!: too many sg elelments: %u > %u", sg_list->NumberOfElements, engine->capacity);
+        return FALSE;
+    }
+
+    //获取 WriteFile/ReadFile 传入的设备偏移
+    WDFREQUEST request = WdfDmaTransactionGetRequest(transaction);
+    if (!request)
+    {
+        TraceError(DBG_DMA, "%!FUNC!: WdfDmaTransactionGetRequest failed");
+        return FALSE;
+    }
+
+    WDF_REQUEST_PARAMETERS params;
+    WDF_REQUEST_PARAMETERS_INIT(&params);
+    WdfRequestGetParameters(request, &params);
+
+    LONGLONG device_offset = 0;
+
+    device_offset = (direction == WdfDmaDirectionWriteToDevice) ? (LONGLONG)params.Parameters.Write.DeviceOffset : (LONGLONG)params.Parameters.Read.DeviceOffset;
+
+    size_t bytes_done = WdfDmaTransactionGetBytesTransferred(transaction);
+    device_offset += bytes_done;
+
+    //填充描述符链表
+    for (ULONG i = 0; i < sg_list->NumberOfElements; ++i)
+    {
+        desc[i].control = XDMA_DESC_MAGIC;
+        desc[i].numBytes = sg_list->Elements[i].Length;
+
+        if (direction == WdfDmaDirectionWriteToDevice)
+        {
+            // H2C: src=主机内存, dst=设备地址
+            desc[i].srcAddrLo = sg_list->Elements[i].Address.LowPart;
+            desc[i].srcAddrHi = sg_list->Elements[i].Address.HighPart;
+            desc[i].dstAddrLo = (UINT32)(device_offset & 0xffffffff);
+            desc[i].dstAddrHi = (UINT32)(device_offset >> 32);
+        }
+        else if (direction == WdfDmaDirectionReadFromDevice)
+        {
+            // C2H: src=设备地址, dst=主机内存
+            desc[i].srcAddrLo = (UINT32)(device_offset & 0xffffffff);
+            desc[i].srcAddrHi = (UINT32)(device_offset >> 32);
+            desc[i].dstAddrLo = sg_list->Elements[i].Address.LowPart;
+            desc[i].dstAddrHi = sg_list->Elements[i].Address.HighPart;
+        }
+        else {
+        }
+
+        desc_pa.QuadPart += sizeof(DMA_DESCRIPTOR);
+
+        if ((i + 1) < sg_list->NumberOfElements)
+        {
+            desc[i].nextLo = desc_pa.LowPart;
+            desc[i].nextHi = desc_pa.HighPart;
+        }
+        else
+        {
+            // 最后一项：停止引擎 + 请求中断
+            desc[i].nextLo = 0;
+            desc[i].nextHi = 0;
+            desc[i].control |= (XDMA_DESC_STOP_BIT | XDMA_DESC_COMPLETED_BIT);
+        }
+
+        device_offset += sg_list->Elements[i].Length;
+    }
+
+    //标记请求中，启动引擎
+    engine->isReqPending = TRUE;
+    EngineStart(engine);
+
     TraceVerbose(DBG_INIT, "%!FUNC! is end.");
+
     return TRUE;
 }
 

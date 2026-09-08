@@ -1,27 +1,29 @@
-/*************************************************
+Ôªø/*************************************************
 Copyright (C), 2009-2012    , Level Chip Co., Ltd.
-Œƒº˛√˚:	interrupt.h
-◊˜  ’ﬂ:	«Æ»Ò      ∞Ê±æ: V1.0     –¬Ω®»’∆⁄: 2026.09.06
-√Ë   ˆ: ÷–∂œŒƒº˛
-±∏  ◊¢:
-–ﬁ∏ƒº«¬º:
+Êñá‰ª∂Âêç:	interrupt.h
+‰Ωú  ËÄÖ:	Èí±Èîê      ÁâàÊú¨: V1.0     Êñ∞Âª∫Êó•Êúü: 2026.09.06
+Êèè  Ëø∞: ‰∏≠Êñ≠Êñá‰ª∂
+Â§á  Ê≥®:
+‰øÆÊîπËÆ∞ÂΩï:
 
-  1.  »’∆⁄: 2026.09.06
-      ◊˜’ﬂ: «Æ»Ò
-      ƒ⁄»›:
-          1) ¥ÀŒ™ƒ£∞Âµ⁄“ª∏ˆ∞Ê±æ£ª
-      ∞Ê±æ:V1.0
+  1.  Êó•Êúü: 2026.09.06
+      ‰ΩúËÄÖ: Èí±Èîê
+      ÂÜÖÂÆπ:
+          1) Ê≠§‰∏∫Ê®°ÊùøÁ¨¨‰∏Ä‰∏™ÁâàÊú¨Ôºõ
+      ÁâàÊú¨:V1.0
 
 *************************************************/
 
 #include "interrupt.h"
 #include "trace.h"
+#include "dma_engine.h"
+#include "device.h"
 
 #ifdef DBG
 #include "interrupt.tmh"
 #endif
 
-// πƒ‹÷–∂œ
+//‰ΩøËÉΩ‰∏≠Êñ≠
 static NTSTATUS EvtInterruptEnable(WDFINTERRUPT interrupt, WDFDEVICE device)
 {
     UNREFERENCED_PARAMETER(device);
@@ -32,6 +34,7 @@ static NTSTATUS EvtInterruptEnable(WDFINTERRUPT interrupt, WDFDEVICE device)
     if (ptInterrupt_Context)
     {
         ptInterrupt_Context->regs->userIntEnableW1S = 0xffffffff;
+        //ptInterrupt_Context->regs->channelIntEnableW1S = 0xffffffff;
         TraceInfo(DBG_IRQ, "%!FUNC!: User interrupt enabled");
     }
 
@@ -40,7 +43,7 @@ static NTSTATUS EvtInterruptEnable(WDFINTERRUPT interrupt, WDFDEVICE device)
     return STATUS_SUCCESS;
 }
 
-//»°œ˚÷–∂œ πƒ‹
+//ÂèñÊ∂à‰∏≠Êñ≠‰ΩøËÉΩ
 static NTSTATUS EvtInterruptDisable(WDFINTERRUPT interrupt, WDFDEVICE device)
 {
     UNREFERENCED_PARAMETER(device);
@@ -59,37 +62,51 @@ static NTSTATUS EvtInterruptDisable(WDFINTERRUPT interrupt, WDFDEVICE device)
     return STATUS_SUCCESS;
 }
 
-//isr∫Ø ˝
+//isrÂáΩÊï∞
 BOOLEAN EvtInterruptIsr(WDFINTERRUPT interrupt, ULONG message_id)
 {
     TraceVerbose(DBG_IRQ, "%!FUNC! is enter.");
 
-    BOOLEAN ret = FALSE;
-
     PINTERRUPT_CONTEXT ptInterrupt_Context = GetInterruptContext(interrupt);
-    if (ptInterrupt_Context)
+    if (!ptInterrupt_Context)
     {
-        UINT32 userIrq = ptInterrupt_Context->regs->userIntRequest;
-        TraceInfo(DBG_IRQ, "%!FUNC!: message_id = %u, userIntRequest = 0x%08x", message_id, userIrq);
-
-        if (userIrq == 0)
-        {
-            TraceWarning(DBG_IRQ, "%!FUNC!: Suprious interrupt");
-            return FALSE;
-        }
-
-        ptInterrupt_Context->regs->userIntEnableW1C = userIrq;      //Ω˚÷π“—æ≠¥•∑¢µƒ÷–∂œŒª£¨∑¿÷π÷–∂œ∑Á±©
-        ret = WdfInterruptQueueDpcForIsr(interrupt);
-
-        TraceInfo(DBG_IRQ, "%!FUNC!: WdfInterruptQueueDpcForIsr");
+        TraceError(DBG_IRQ, "%!FUNC!: GetInterruptContext failed: ");
+        return FALSE;
     }
+
+    UINT32 chanIrq = ptInterrupt_Context->regs->channelIntRequest;      //4 Ë∑Ø DMA ÂºïÊìéÈÄöÈÅì‰∏≠Êñ≠
+    UINT32 userIrq = ptInterrupt_Context->regs->userIntRequest;         //FPGA ÈÄªËæëÁïôÁªôÂºÄÂèëËÄÖËá™ÂÆö‰πâÁöÑÁî®Êà∑‰∏≠Êñ≠ÔºàUser InterruptÔºâ
+
+    TraceInfo(DBG_IRQ, "%!FUNC!: message_id = %u, channelIntRequest = 0x%08x, userIntRequest = 0x%08x", message_id, chanIrq, userIrq);
+
+    if (chanIrq == 0 && userIrq == 0)
+    {
+        TraceWarning(DBG_IRQ, "%!FUNC!: Suprious interrupt");
+        return FALSE;
+    }
+
+    //ÂÖ≥Èó≠Â∑≤Ëß¶ÂèëÁöÑ‰∏≠Êñ≠
+
+    if (chanIrq)
+    {
+        ptInterrupt_Context->channelIrqPending = chanIrq;
+        ptInterrupt_Context->regs->channelIntEnableW1C = chanIrq;       
+    }
+
+    if (userIrq)
+    {
+        ptInterrupt_Context->userIrqPending = userIrq;
+        ptInterrupt_Context->regs->userIntEnableW1C = userIrq;
+    }
+
+    TraceInfo(DBG_IRQ, "%!FUNC!: WdfInterruptQueueDpcForIsr");
 
     TraceVerbose(DBG_IRQ, "%!FUNC! is end.");
 
-    return ret;
+    return WdfInterruptQueueDpcForIsr(interrupt);
 }
 
-//Dpc∫Ø ˝
+//DpcÂáΩÊï∞
 static VOID EvtInterruptDpc(WDFINTERRUPT interrupt, WDFDEVICE device)
 {
     UNREFERENCED_PARAMETER(device);
@@ -97,16 +114,40 @@ static VOID EvtInterruptDpc(WDFINTERRUPT interrupt, WDFDEVICE device)
     TraceVerbose(DBG_IRQ, "%!FUNC! is enter.");
 
     PINTERRUPT_CONTEXT ptInterrupt_Context = GetInterruptContext(interrupt);
-    if (ptInterrupt_Context)
+    if (!ptInterrupt_Context)
     {
-
-        //÷ÿ–¬ πƒ‹÷–∂œ
-        WdfInterruptAcquireLock(interrupt);
-        ptInterrupt_Context->regs->userIntEnableW1S = 0xffffffff;           //TODO:◊Ó∫√ « πƒ‹∂‘”¶–Ë“™µƒ÷–∂œŒª
-        WdfInterruptReleaseLock(interrupt);
-
-        TraceInfo(DBG_IRQ, "%!FUNC!: user interrupt occured");
+        TraceError(DBG_IRQ, "%!FUNC!: GetInterruptContext failed: ");
+        return;
     }
+
+    if (ptInterrupt_Context->channelIrqPending)
+    {
+        EngineProcessChannelInterrupt(ptInterrupt_Context->deviceContext);
+    }
+
+    if (ptInterrupt_Context->userIrqPending)
+    {
+        //Â§ÑÁêÜËá™ÂÆö‰πâÁöÑÁî®Êà∑‰∏≠Êñ≠
+    }
+
+    //ÈáçÊñ∞‰ΩøËÉΩ‰∏≠Êñ≠
+    WdfInterruptAcquireLock(interrupt);
+
+    if (ptInterrupt_Context->channelIrqPending)
+    {
+        ptInterrupt_Context->regs->channelIntEnableW1S = ptInterrupt_Context->channelIrqPending;
+        ptInterrupt_Context->channelIrqPending = 0;
+    }
+    
+    if (ptInterrupt_Context->userIrqPending)
+    {
+        ptInterrupt_Context->regs->userIntEnableW1S = ptInterrupt_Context->userIrqPending;
+        ptInterrupt_Context->userIrqPending = 0;
+    }   
+
+    WdfInterruptReleaseLock(interrupt);
+
+    TraceInfo(DBG_IRQ, "%!FUNC!: user interrupt occured");
 
     TraceVerbose(DBG_IRQ, "%!FUNC! is end.");
 }
@@ -116,7 +157,7 @@ NTSTATUS SetupInterrupts(_In_ WDFDEVICE device, _In_ WDFCMRESLIST resources_raw,
     TraceVerbose(DBG_INIT, "%!FUNC! is enter.");
 
     NTSTATUS status = STATUS_INSUFFICIENT_RESOURCES;
-    const ULONG ulCmResourceCount = WdfCmResourceListGetCount(resources_raw);     //◊ ‘¥ ˝¡ø
+    const ULONG ulCmResourceCount = WdfCmResourceListGetCount(resources_raw);     //ËµÑÊ∫êÊï∞Èáè
 
     for (ULONG index = 0; index < ulCmResourceCount; ++index)
     {
@@ -137,7 +178,7 @@ NTSTATUS SetupInterrupts(_In_ WDFDEVICE device, _In_ WDFCMRESLIST resources_raw,
         if (ptResourceTranslated->Type != CmResourceTypeInterrupt)
             continue;
 
-        //…Ë÷√÷–∂œ◊ ‘¥°¢isr°¢dpc∫Ø ˝
+        //ËÆæÁΩÆ‰∏≠Êñ≠ËµÑÊ∫ê„ÄÅisr„ÄÅdpcÂáΩÊï∞
         WDF_INTERRUPT_CONFIG tWDF_Interrupt_Config;
         WDF_INTERRUPT_CONFIG_INIT(&tWDF_Interrupt_Config, EvtInterruptIsr, EvtInterruptDpc);
         tWDF_Interrupt_Config.InterruptRaw = ptResourceRaw;
@@ -158,12 +199,15 @@ NTSTATUS SetupInterrupts(_In_ WDFDEVICE device, _In_ WDFCMRESLIST resources_raw,
         }
 
         PINTERRUPT_CONTEXT ptInterrupt_Context = GetInterruptContext(tWDFInterrupt);
-        if(ptInterrupt_Context)
+        if (ptInterrupt_Context)
+        {
             ptInterrupt_Context->regs = regs;
+            ptInterrupt_Context->deviceContext = GetDeviceContext(device);
+        }
 
         status = STATUS_SUCCESS;
 
-        break;      // π”√µ⁄“ª∏ˆ÷–∂œº¥ø…
+        break;      //‰ΩøÁî®Á¨¨‰∏Ä‰∏™‰∏≠Êñ≠Âç≥ÂèØ
     }
 
     TraceVerbose(DBG_INIT, "%!FUNC! is end.");

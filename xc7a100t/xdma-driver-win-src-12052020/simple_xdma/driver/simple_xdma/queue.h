@@ -1,16 +1,16 @@
-/*************************************************
+﻿/*************************************************
 Copyright (C), 2009-2012    , Level Chip Co., Ltd.
-�ļ���:	queue.h
-��  ��:	Ǯ��      �汾: V1.0     �½�����: 2026.09.01
-��  ��: Irp��������ļ�
-��  ע:
-�޸ļ�¼:
+文件名:	queue.h
+作  者:	钱锐      版本: V1.0     新建日期: 2026.09.01
+描  述: Irp请求队列文件
+备  注:
+修改记录:
 
-  1.  ����: 2026.09.01
-      ����: Ǯ��
-      ����:
-          1) ��Ϊģ���һ���汾��
-      �汾:V1.0
+  1.  日期: 2026.09.01
+      作者: 钱锐
+      内容:
+          1) 此为模板第一个版本；
+      版本:V1.0
 
 *************************************************/
 
@@ -20,14 +20,23 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #include <ntddk.h>
 #include <wdf.h>
 
+typedef struct _DMA_ENGINE DMA_ENGINE;
+
 typedef struct _QUEUE_CONTEXT
 {
-    DWORD32 reserve;        //Ԥ��
-}QUEUE_CONTEXT, * PQUEUE_CONTEXT;
+    DMA_ENGINE* engine;   // 指向关联的 DMA 引擎
+}QUEUE_CONTEXT, *PQUEUE_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, GetQueueContext)
 
+DMA_ENGINE* GetEngineFromQueue(_In_ WDFQUEUE Queue);
+
 VOID EVT_WDF_IO_Queue_IO_Device_Control(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Request, _In_ size_t OutputBufferLength, _In_ size_t InputBufferLength, _In_ ULONG IoControlCode);
 
+VOID EVT_WDF_IO_Queue_IO_Read(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Request, _In_  size_t Length);
+
+VOID EVT_WDF_IO_Queue_IO_Write(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Request, _In_  size_t Length);
+
+VOID EVT_WDF_IO_Queue_IO_Stop(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Request, _In_ ULONG ActionFlags);
 
 #endif // !__QUEUE_H__

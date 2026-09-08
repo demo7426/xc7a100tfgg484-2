@@ -59,6 +59,7 @@ static VOID GetFileType(_In_ PUNICODE_STRING file_name, _Out_ PFILE_CONTEXT file
         if (wcscmp(file_name->Buffer, tFileName_FileType_Infos[i].file_name) == 0)
         {
             *file_context = tFileName_FileType_Infos[i];
+            break;
         }
 
     }
@@ -158,7 +159,6 @@ VOID EVT_WDF_IO_IN_Caller_Context(_In_ WDFDEVICE Device, _In_ WDFREQUEST Request
     WDF_REQUEST_PARAMETERS params;
     PFILE_CONTEXT ptFile_Context = GetFileContext(WdfRequestGetFileObject(Request));
     
-
     WDF_REQUEST_PARAMETERS_INIT(&params);
     WdfRequestGetParameters(Request, &params);
 
@@ -199,10 +199,38 @@ VOID EVT_WDF_IO_IN_Caller_Context(_In_ WDFDEVICE Device, _In_ WDFREQUEST Request
         return;
     }
 
+    //H2C/C2H 请求路由
+    if (ptFile_Context->file_type == FILE_TYPE_H2C || ptFile_Context->file_type == FILE_TYPE_C2H)
+    {
+        PDEVICE_CONTEXT device_context = GetDeviceContext(Device);
+
+        if (ptFile_Context->channel >= XDMA_MAX_NUM_CHANNELS)
+        {
+            WdfRequestComplete(Request, STATUS_INVALID_PARAMETER);
+            return;
+        }
+
+        PDMA_ENGINE engine = (ptFile_Context->file_type == FILE_TYPE_H2C)
+            ? &device_context->engines[ptFile_Context->channel][H2C]
+            : &device_context->engines[ptFile_Context->channel][C2H];
+
+        ptFile_Context->engine = engine;
+        
+        //转发到引擎专用队列
+        status = WdfRequestForwardToIoQueue(Request, engine->queue);
+        if (!NT_SUCCESS(status))
+        {
+            TraceError(DBG_INIT, "%!FUNC! WdfRequestForwardToIoQueue  failed: %!STATUS!", status);
+            return;
+        }
+
+        return;
+    }
+
     status = WdfDeviceEnqueueRequest(Device, Request);
     if (!NT_SUCCESS(status))
     {
-        TraceError(DBG_INIT, "%!FUNC! failed: %!STATUS!", status);
+        TraceError(DBG_INIT, "%!FUNC! WdfDeviceEnqueueRequest failed: %!STATUS!", status);
     }
 
 

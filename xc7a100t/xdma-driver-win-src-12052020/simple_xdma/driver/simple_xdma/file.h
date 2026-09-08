@@ -22,6 +22,8 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 
 #include "xdma_public.h"
 
+typedef struct _DMA_ENGINE DMA_ENGINE;
+
 enum FILE_TYPE
 {
     FILE_TYPE_NONE = 0,
@@ -45,6 +47,8 @@ typedef struct _FILE_CONTEXT
 
     XDMA_BAR_INFO bar_infos[BAR_MAX_NUM];         //bar映射后的用户态虚拟地址
     PMDL mdls[BAR_MAX_NUM];
+
+    DMA_ENGINE* engine;     //关联的DMA引擎
 }FILE_CONTEXT, * PFILE_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(FILE_CONTEXT, GetFileContext)

@@ -1,20 +1,32 @@
-/*************************************************
+Ôªø/*************************************************
 Copyright (C), 2009-2012    , Level Chip Co., Ltd.
-Œƒº˛√˚:	queue.c
-◊˜  ’ﬂ:	«Æ»Ò      ∞Ê±æ: V1.0     –¬Ω®»’∆⁄: 2026.09.01
-√Ë   ˆ: Irp«Î«Û∂”¡–Œƒº˛
-±∏  ◊¢:
-–ﬁ∏ƒº«¬º:
+Êñá‰ª∂Âêç:	queue.c
+‰Ωú  ËÄÖ:	Èí±Èîê      ÁâàÊú¨: V1.0     Êñ∞Âª∫Êó•Êúü: 2026.09.01
+Êèè  Ëø∞: IrpËØ∑Ê±ÇÈòüÂàóÊñá‰ª∂
+Â§á  Ê≥®:
+‰øÆÊîπËÆ∞ÂΩï:
 
-  1.  »’∆⁄: 2026.09.01
-      ◊˜’ﬂ: «Æ»Ò
-      ƒ⁄»›:
-          1) ¥ÀŒ™ƒ£∞Âµ⁄“ª∏ˆ∞Ê±æ£ª
-      ∞Ê±æ:V1.0
+  1.  Êó•Êúü: 2026.09.01
+      ‰ΩúËÄÖ: Èí±Èîê
+      ÂÜÖÂÆπ:
+          1) Ê≠§‰∏∫Ê®°ÊùøÁ¨¨‰∏Ä‰∏™ÁâàÊú¨Ôºõ
+      ÁâàÊú¨:V1.0
 
 *************************************************/
 
 #include "queue.h"
+#include "dma_engine.h"
+#include "trace.h"
+
+#ifdef DBG
+#include "queue.tmh"
+#endif
+
+DMA_ENGINE* GetEngineFromQueue(_In_ WDFQUEUE Queue)
+{
+    PQUEUE_CONTEXT ctx = GetQueueContext(Queue);
+    return ctx->engine;
+}
 
 VOID EVT_WDF_IO_Queue_IO_Device_Control(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Request, _In_ size_t OutputBufferLength, _In_ size_t InputBufferLength, _In_ ULONG IoControlCode)
 {
@@ -26,4 +38,85 @@ VOID EVT_WDF_IO_Queue_IO_Device_Control(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Req
 
 
     return;
+}
+
+VOID EVT_WDF_IO_Queue_IO_Read(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Request, _In_  size_t Length)
+{
+    UNREFERENCED_PARAMETER(Length);
+
+    TraceVerbose(DBG_INIT, "%!FUNC! is enter.");
+
+    PDMA_ENGINE engine = GetEngineFromQueue(Queue);
+    if (!engine || !engine->enabled)
+    {
+        WdfRequestComplete(Request, STATUS_DEVICE_NOT_READY);
+        return;
+    }
+
+    NTSTATUS status = STATUS_SUCCESS;
+
+    status = WdfDmaTransactionInitializeUsingRequest(engine->dmaTransaction, Request, EvtProgramDma, WdfDmaDirectionReadFromDevice);
+    if (!NT_SUCCESS(status))
+    {
+        TraceError(DBG_IO, "%!FUNC!: WdfIoQueueCreate failed: %!STATUS!", status);
+
+        WdfRequestComplete(Request, status);
+        return;
+    }
+
+    status = WdfDmaTransactionExecute(engine->dmaTransaction, engine);
+    if (!NT_SUCCESS(status))
+    {
+        TraceError(DBG_IO, "%!FUNC!: WdfDmaTransactionExecute failed: %!STATUS!", status);
+
+        WdfRequestComplete(Request, status);
+        return;
+    }
+
+    TraceVerbose(DBG_INIT, "%!FUNC! is end.");
+}
+
+VOID EVT_WDF_IO_Queue_IO_Write(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Request, _In_  size_t Length)
+{
+    UNREFERENCED_PARAMETER(Length);
+
+    TraceVerbose(DBG_INIT, "%!FUNC! is enter.");
+
+    PDMA_ENGINE engine = GetEngineFromQueue(Queue);
+    if (!engine || !engine->enabled)
+    {
+        WdfRequestComplete(Request, STATUS_DEVICE_NOT_READY);
+        return;
+    }
+
+    NTSTATUS status = STATUS_SUCCESS;
+
+    status = WdfDmaTransactionInitializeUsingRequest(engine->dmaTransaction, Request, EvtProgramDma, WdfDmaDirectionWriteToDevice);
+    if (!NT_SUCCESS(status))
+    {
+        TraceError(DBG_IO, "%!FUNC!: WdfIoQueueCreate failed: %!STATUS!", status);
+
+        WdfRequestComplete(Request, status);
+        return;
+    }
+
+    status = WdfDmaTransactionExecute(engine->dmaTransaction, engine);
+    if (!NT_SUCCESS(status))
+    {
+        TraceError(DBG_IO, "%!FUNC!: WdfDmaTransactionExecute failed: %!STATUS!", status);
+
+        WdfRequestComplete(Request, status);
+        return;
+    }
+
+    // ËØ∑Ê±ÇÂÆåÊàêÂú® EvtProgramDma Êàñ EngineProcessTransfer ‰∏≠ÂõûË∞É
+
+    TraceVerbose(DBG_INIT, "%!FUNC! is end.");
+}
+
+VOID EVT_WDF_IO_Queue_IO_Stop(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Request, _In_ ULONG ActionFlags)
+{
+    UNREFERENCED_PARAMETER(Queue);
+    UNREFERENCED_PARAMETER(Request);
+    UNREFERENCED_PARAMETER(ActionFlags);
 }
