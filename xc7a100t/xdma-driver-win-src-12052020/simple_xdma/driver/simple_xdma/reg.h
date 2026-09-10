@@ -17,7 +17,7 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #ifndef __REG_H__
 #define __REG_H__
 
-#define CONFIG_BAR_INDEX            (0)
+#define CONFIG_BAR_INDEX            (2)
 
 #define IRQ_BLOCK_REGISTERS        (0x2000)
 

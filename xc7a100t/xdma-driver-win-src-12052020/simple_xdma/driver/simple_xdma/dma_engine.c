@@ -201,7 +201,11 @@ static NTSTATUS EngineCreate(_In_ DEVICE_CONTEXT* device_context, _Inout_ PDMA_E
     }
 
     KeInitializeEvent(&engine->completionEvent, NotificationEvent, FALSE);
+
+    WdfSpinLockAcquire(engine->engineLock);
     engine->isReqPending = FALSE;
+    WdfSpinLockRelease(engine->engineLock);
+
     engine->enabled = TRUE;
 
     TraceInfo(
@@ -267,6 +271,8 @@ NTSTATUS ProbeEngine(_In_ DEVICE_CONTEXT* device_contex)
         channel_mask |= device_contex->engines[ch][C2H].irqBitMask;
     }
     device_contex->interrupt_regs->channelIntEnableW1S = channel_mask;
+
+    TraceVerbose(DBG_INIT, "%!FUNC!: h2c_count = %u, c2h_count = %u.", h2c_count, c2h_count);
 
     TraceVerbose(DBG_INIT, "%!FUNC! is end.");
 
@@ -441,7 +447,10 @@ BOOLEAN EvtProgramDma(_In_ WDFDMATRANSACTION transaction, _In_ WDFDEVICE device,
     }
 
     //标记请求中，启动引擎
+    WdfSpinLockAcquire(engine->engineLock);
     engine->isReqPending = TRUE;
+    WdfSpinLockRelease(engine->engineLock);
+
     EngineStart(engine);
 
     TraceVerbose(DBG_INIT, "%!FUNC! is end.");
