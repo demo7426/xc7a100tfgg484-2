@@ -353,7 +353,7 @@ VOID EngineProcessChannelInterrupt(_In_ DEVICE_CONTEXT* device_contex, _In_ UINT
     TraceVerbose(DBG_INIT, "%!FUNC! is start.");
 
     //chan_int_pending = device_contex->interrupt_regs->channelIntPending;
-    if (chan_int_pending == 0)
+    if (!device_contex || chan_int_pending == 0)
     {
         return;
     }
@@ -371,11 +371,11 @@ VOID EngineProcessChannelInterrupt(_In_ DEVICE_CONTEXT* device_contex, _In_ UINT
         }
     }
     
-    //追踪到进用户中断了，导致系统崩溃
+    //TODO:追踪到进C2H了，导致系统崩溃
     for (ULONG ch = 0; ch < device_contex->c2h_count; ch++)
     {
         PDMA_ENGINE engine = &device_contex->engines[ch][C2H];
-        //TraceInfo(DBG_IRQ, "%!FUNC!: C2H: ch = %u, chan_int_pending = 0x%x, engine->irqBitMask = 0x%x", ch, chan_int_pending, engine->irqBitMask);
+        TraceInfo(DBG_IRQ, "%!FUNC!: C2H: ch = %u, chan_int_pending = 0x%x, engine->irqBitMask = 0x%x", ch, chan_int_pending, engine->irqBitMask);
         if (engine && engine->enabled && (chan_int_pending & engine->irqBitMask))
         {
             //EngineProcessTransfer(engine);
@@ -538,9 +538,6 @@ static VOID EngineProcessTransfer(_In_ PDMA_ENGINE engine)
 
     WdfSpinLockRelease(engine->engineLock);
 
-
-    WdfRequestCompleteWithInformation(request, status, 256);
-    return;
 
     switch (engine_status & XDMA_STAT_EXPECTED_ZERO)
     {
