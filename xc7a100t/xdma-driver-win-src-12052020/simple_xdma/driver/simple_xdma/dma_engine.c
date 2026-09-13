@@ -27,6 +27,23 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 
 static VOID EngineProcessTransfer(_In_ PDMA_ENGINE engine);
 
+// 按引擎单独使能中断
+// 写 channelIntEnableW1S 寄存器，仅设置本引擎对应的中断位（irqBitMask）
+// W1S 是 Write-1-to-Set，写入1仅置位对应位，其他位保持不变，无读-改-写风险
+static VOID EngineEnableInterrupt(_In_ PDMA_ENGINE engine)
+{
+    if (!engine)
+    {
+        TraceError(DBG_IRQ, "%!FUNC!: engine ptr is NULL!");
+        return;
+    }
+    engine->parentDevice->interrupt_regs->channelIntEnableW1S = engine->irqBitMask;
+    TraceInfo(DBG_IRQ, "%!FUNC!: %s_%u enabled interrupt, irqBitMask=0x%08x",
+        (engine->dir == H2C ? "H2C" : "C2H"),
+        engine->channel,
+        engine->irqBitMask);
+}
+
 //检查当前通道的DMA是否存在
 static BOOLEAN EngineExists(_In_ DEVICE_CONTEXT* device_context, DirToDev dir, ULONG channel)
 {
@@ -331,33 +348,37 @@ VOID EngineStop(_In_ PDMA_ENGINE engine)
     TraceVerbose(DBG_INIT, "%!FUNC! is end.");
 }
 
-VOID EngineProcessChannelInterrupt(_In_ DEVICE_CONTEXT* device_contex)
+VOID EngineProcessChannelInterrupt(_In_ DEVICE_CONTEXT* device_contex, _In_ UINT32 chan_int_pending)
 {
     TraceVerbose(DBG_INIT, "%!FUNC! is start.");
 
-    UINT32 chan_irq = device_contex->interrupt_regs->channelIntRequest;
-    if (chan_irq == 0)
+    //chan_int_pending = device_contex->interrupt_regs->channelIntPending;
+    if (chan_int_pending == 0)
     {
-        TraceInfo(DBG_IRQ, "%!FUNC!: chan_irq = %u", chan_irq);
         return;
     }
+
+    TraceInfo(DBG_IRQ, "%!FUNC!: chan_int_pending = 0x%x", chan_int_pending);
 
     //遍历所有已启动的引擎，匹配中断位
     for (ULONG ch = 0; ch < device_contex->h2c_count; ch++)
     {
         PDMA_ENGINE engine = &device_contex->engines[ch][H2C];
-        if (engine && engine->enabled && (chan_irq & engine->irqBitMask))
+        TraceInfo(DBG_IRQ, "%!FUNC!: H2C: ch = %u, chan_int_pending = 0x%x, engine->irqBitMask = 0x%x", ch, chan_int_pending, engine->irqBitMask);
+        if (engine && engine->enabled && (chan_int_pending & engine->irqBitMask))
         {
-            EngineProcessTransfer(engine);
+            //EngineProcessTransfer(engine);
         }
     }
     
+    //追踪到进用户中断了，导致系统崩溃
     for (ULONG ch = 0; ch < device_contex->c2h_count; ch++)
     {
         PDMA_ENGINE engine = &device_contex->engines[ch][C2H];
-        if (engine && engine->enabled && (chan_irq & engine->irqBitMask))
+        //TraceInfo(DBG_IRQ, "%!FUNC!: C2H: ch = %u, chan_int_pending = 0x%x, engine->irqBitMask = 0x%x", ch, chan_int_pending, engine->irqBitMask);
+        if (engine && engine->enabled && (chan_int_pending & engine->irqBitMask))
         {
-            EngineProcessTransfer(engine);
+            //EngineProcessTransfer(engine);
         }
     }
 
@@ -380,6 +401,11 @@ BOOLEAN EvtProgramDma(_In_ WDFDMATRANSACTION transaction, _In_ WDFDEVICE device,
 
     if (sg_list->NumberOfElements > engine->capacity)
     {
+        // 必须清理！
+        WdfDmaTransactionRelease(engine->dmaTransaction);
+        WDFREQUEST req = WdfDmaTransactionGetRequest(transaction);
+        if (req) WdfRequestComplete(req, STATUS_INSUFFICIENT_RESOURCES);
+
         TraceError(DBG_DMA, "%!FUNC!: too many sg elelments: %u > %u", sg_list->NumberOfElements, engine->capacity);
         return FALSE;
     }
@@ -447,11 +473,15 @@ BOOLEAN EvtProgramDma(_In_ WDFDMATRANSACTION transaction, _In_ WDFDEVICE device,
     }
 
     //标记请求中，启动引擎
+    MemoryBarrier();
+
     WdfSpinLockAcquire(engine->engineLock);
     engine->isReqPending = TRUE;
     WdfSpinLockRelease(engine->engineLock);
 
     EngineStart(engine);
+
+    MemoryBarrier();
 
     TraceVerbose(DBG_INIT, "%!FUNC! is end.");
 
@@ -471,6 +501,9 @@ static VOID EngineProcessTransfer(_In_ PDMA_ENGINE engine)
 
     if (engine->isReqPending == FALSE)
     {
+        // 即使是伪中断，也要读 statusRC 清除引擎级中断条件，否则 DPC 重新使能后立即重触发
+        EnginReadStatus(engine, TRUE);
+
         WdfSpinLockRelease(engine->engineLock);
 
         TraceWarning(DBG_DMA, "%!FUNC!: %s_%u spurious interrupt",
@@ -482,6 +515,9 @@ static VOID EngineProcessTransfer(_In_ PDMA_ENGINE engine)
     if (!request)
     {
         engine->isReqPending = FALSE;
+
+        // 即使是伪中断，也要读 statusRC 清除引擎级中断条件，否则 DPC 重新使能后立即重触发
+        EnginReadStatus(engine, TRUE);
 
         WdfSpinLockRelease(engine->engineLock);
 
@@ -497,42 +533,71 @@ static VOID EngineProcessTransfer(_In_ PDMA_ENGINE engine)
     RtlZeroMemory(desc, WdfCommonBufferGetLength(engine->descBuffer));
 
     engine->isReqPending = FALSE;
+
+    EngineEnableInterrupt(engine);
+
     WdfSpinLockRelease(engine->engineLock);
 
-    //判断状态
-    if (
-        (engine_status & XDMA_BUSY_BIT) == 0 &&
-        (engine_status & (XDMA_STAT_READ_ERROR | XDMA_STAT_DESCRIPTOR_ERROR)) == 0
-        )
+
+    WdfRequestCompleteWithInformation(request, status, 256);
+    return;
+
+    switch (engine_status & XDMA_STAT_EXPECTED_ZERO)
     {
-        //正常完成
-        BOOLEAN completes = FALSE;
-        size_t bytes = 0;
+    case XDMA_ENGINE_STOPPED_OK:
+    {
+        BOOLEAN completes = WdfDmaTransactionDmaCompleted(engine->dmaTransaction, &status);
+        if (completes)
+        {
+            // 所有传输已完成，获取实际传输字节数
+            size_t bytes = WdfDmaTransactionGetBytesTransferred(engine->dmaTransaction);
+            KeSetEvent(&engine->completionEvent, IO_NO_INCREMENT, FALSE);
+            status = WdfDmaTransactionRelease(engine->dmaTransaction);
+            if (!NT_SUCCESS(status)) {
+                TraceError(DBG_DMA, "%!FUNC!: WdfDmaTransactionRelease failed: %!STATUS!", status);
+            }
 
-        completes = WdfDmaTransactionDmaCompleted(engine->dmaTransaction, &status);
-        bytes = WdfDmaTransactionGetBytesTransferred(engine->dmaTransaction);
+            WdfRequestCompleteWithInformation(request, status, bytes);
+        }
+        else
+        {
+            // 还有更多传输需要完成（分块传输场景），等待下一次 EvtProgramDma 回调
+            TraceVerbose(DBG_DMA, "%!FUNC!: %s_%u transfer pending more",
+                (engine->dir == H2C ? "H2C" : "C2H"), engine->channel);
+        }
+    }
+    break;
+    case XDMA_BUSY_BIT:
+    {
+        // 引擎仍然忙（无错误但未停止）
+        TraceError(DBG_DMA, "%!FUNC!: %s_%u engine still busy, completedDescCount=%u",
+            (engine->dir == H2C ? "H2C" : "C2H"), engine->channel,
+            engine->regs->completedDescCount);
 
-        TraceInfo(DBG_DMA, "%!FUNC!: %s_%u completed, bytes=%Iu",
-            (engine->dir == H2C ? "H2C" : "C2H"), engine->channel, bytes);
-
+    }
+    default:
+    {
+        BOOLEAN completes = WdfDmaTransactionDmaCompletedFinal(engine->dmaTransaction, 0, &status);
         if (completes)
         {
             KeSetEvent(&engine->completionEvent, IO_NO_INCREMENT, FALSE);
-            WdfDmaTransactionRelease(engine->dmaTransaction);
-            WdfRequestCompleteWithInformation(request, status, bytes);
+            status = WdfDmaTransactionRelease(engine->dmaTransaction);
+            if (!NT_SUCCESS(status)) {
+                TraceError(DBG_DMA, "%!FUNC!: WdfDmaTransactionRelease failed: %!STATUS!", status);
+            }
+
+            WdfRequestComplete(request, STATUS_INTERNAL_ERROR);
+        }
+        else
+        {
+            // 还有更多传输需要完成（分块传输场景），等待下一次 EvtProgramDma 回调
+            TraceVerbose(DBG_DMA, "%!FUNC!: %s_%u transfer pending more",
+                (engine->dir == H2C ? "H2C" : "C2H"), engine->channel);
         }
     }
-    else
-    {
-        //错误
-        TraceError(DBG_DMA, "%!FUNC!: %s_%u error engine_status=0x%08x",
-            (engine->dir == H2C ? "H2C" : "C2H"), engine->channel, engine_status);
-
-        WdfDmaTransactionDmaCompletedFinal(engine->dmaTransaction, 0, &status);
-        KeSetEvent(&engine->completionEvent, IO_NO_INCREMENT, FALSE);
-        WdfDmaTransactionRelease(engine->dmaTransaction);
-        WdfRequestComplete(request, STATUS_INTERNAL_ERROR);
+    break;
     }
+    
 
     TraceVerbose(DBG_INIT, "%!FUNC! is end.");
 }

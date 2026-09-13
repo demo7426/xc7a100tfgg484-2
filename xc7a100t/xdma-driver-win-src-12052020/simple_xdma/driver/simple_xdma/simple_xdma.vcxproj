@@ -92,6 +92,7 @@
       <WppRecorderEnabled>false</WppRecorderEnabled>
       <WppMinimalRebuildFromTracking>true</WppMinimalRebuildFromTracking>
       <PreprocessorDefinitions>_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
     </ClCompile>
     <Inf>
       <TimeStamp>1.0.0.0</TimeStamp>

@@ -75,7 +75,7 @@ VOID EngineStart(_In_ PDMA_ENGINE engine);
 VOID EngineStop(_In_ PDMA_ENGINE engine);
 
 //引擎中断处理（DPC中调用）
-VOID EngineProcessChannelInterrupt(_In_ DEVICE_CONTEXT* device_contex);
+VOID EngineProcessChannelInterrupt(_In_ DEVICE_CONTEXT* device_contex, _In_ UINT32 chan_int_pending);
 
 //WDF ProgramDMA回调 - 编程描述符并启动传输
 BOOLEAN EvtProgramDma(_In_ WDFDMATRANSACTION transaction, _In_ WDFDEVICE device, _In_ WDFCONTEXT wdf_context, _In_ WDF_DMA_DIRECTION direction, _In_ PSCATTER_GATHER_LIST sg_list);

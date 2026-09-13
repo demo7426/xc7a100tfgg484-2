@@ -101,14 +101,14 @@ BOOLEAN EvtInterruptIsr(WDFINTERRUPT interrupt, ULONG message_id)
 
     if (chanIrq)
     {
-        ptInterrupt_Context->channelIrqPending = chanIrq;
-        ptInterrupt_Context->regs->channelIntEnableW1C = chanIrq;
+        ptInterrupt_Context->channelIrqPending |= chanIrq;
+        ptInterrupt_Context->regs->channelIntEnableW1C |= chanIrq;
     }
 
     if (userIrq)
     {
-        ptInterrupt_Context->userIrqPending = userIrq;
-        ptInterrupt_Context->regs->userIntEnableW1C = userIrq;
+        ptInterrupt_Context->userIrqPending |= userIrq;
+        ptInterrupt_Context->regs->userIntEnableW1C |= userIrq;
     }
 
     TraceInfo(DBG_IRQ, "%!FUNC!: WdfInterruptQueueDpcForIsr");
@@ -131,10 +131,10 @@ static VOID EvtInterruptDpc(WDFINTERRUPT interrupt, WDFDEVICE device)
         TraceError(DBG_IRQ, "%!FUNC!: GetInterruptContext failed: ");
         return;
     }
-
+   
     if (ptInterrupt_Context->channelIrqPending)
     {
-        EngineProcessChannelInterrupt(ptInterrupt_Context->deviceContext);
+        EngineProcessChannelInterrupt(ptInterrupt_Context->deviceContext, ptInterrupt_Context->channelIrqPending);
     }
 
     if (ptInterrupt_Context->userIrqPending)
@@ -217,6 +217,7 @@ NTSTATUS SetupInterrupts(_In_ WDFDEVICE device, _In_ WDFCMRESLIST resources_raw,
             ptInterrupt_Context->deviceContext = GetDeviceContext(device);
         }
 
+#if 0
         // 编程中断向量寄存器：告诉 XDMA 硬件每个通道/user 中断使用哪个 MSI/MSI-X 向量
         // MSI/MSI-X 时 vectorValue = 0；线中断时需要获取 PCI 中断引脚号
         UINT32 vectorValue = 0;
@@ -254,6 +255,7 @@ NTSTATUS SetupInterrupts(_In_ WDFDEVICE device, _In_ WDFCMRESLIST resources_raw,
         regs->channelVector[0] = BuildVectorReg(vectorValue, vectorValue, vectorValue, vectorValue);
         regs->channelVector[1] = BuildVectorReg(vectorValue, vectorValue, vectorValue, vectorValue);
 
+#endif
         status = STATUS_SUCCESS;
 
         break;      //使用第一个中断即可

@@ -59,7 +59,6 @@ VOID EVT_WDF_IO_Queue_IO_Read(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Request, _In_
     if (!NT_SUCCESS(status))
     {
         TraceError(DBG_IO, "%!FUNC!: WdfIoQueueCreate failed: %!STATUS!", status);
-
         WdfRequestComplete(Request, status);
         return;
     }
@@ -68,7 +67,7 @@ VOID EVT_WDF_IO_Queue_IO_Read(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Request, _In_
     if (!NT_SUCCESS(status))
     {
         TraceError(DBG_IO, "%!FUNC!: WdfDmaTransactionExecute failed: %!STATUS!", status);
-
+        WdfDmaTransactionRelease(engine->dmaTransaction);
         WdfRequestComplete(Request, status);
         return;
     }
@@ -104,7 +103,7 @@ VOID EVT_WDF_IO_Queue_IO_Write(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Request, _In
     if (!NT_SUCCESS(status))
     {
         TraceError(DBG_IO, "%!FUNC!: WdfDmaTransactionExecute failed: %!STATUS!", status);
-
+        WdfDmaTransactionRelease(engine->dmaTransaction);
         WdfRequestComplete(Request, status);
         return;
     }

@@ -66,6 +66,11 @@ Copyright (C), 2009-2012    , Level Chip Co., Ltd.
 #define XDMA_STAT_READ_ERROR                (0x1fUL * (1 << 9))
 #define XDMA_STAT_DESCRIPTOR_ERROR          (0x1fUL * (1 << 19))
 
+#define XDMA_ENGINE_STOPPED_OK              (0UL)
+#define XDMA_STAT_EXPECTED_ZERO             (XDMA_BUSY_BIT | XDMA_MAGIC_STOPPED_BIT | \
+                                             XDMA_FETCH_STOPPED_BIT | XDMA_ALIGN_MISMATCH_BIT | \
+                                             XDMA_STAT_READ_ERROR | XDMA_STAT_DESCRIPTOR_ERROR)
+
 // ÃèÊö·û¿ØÖÆÎ»
 #define XDMA_DESC_STOP_BIT                  (1 << 0)
 #define XDMA_DESC_COMPLETED_BIT             (1 << 1)
